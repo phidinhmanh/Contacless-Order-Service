@@ -1,0 +1,167 @@
+"""
+Order business logic service.
+Handles complex order operations that involve multiple models.
+"""
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from app.models.food import Food
+from app.models.order import Order, OrderItem
+from app.models.table import Table
+from app.models.user import User
+from app.schemas.order import OrderCreate
+
+
+class OrderService:
+    """Service class for order-related business logic."""
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def create_order(self, order_in: OrderCreate) -> Order:
+        """
+        Create a new order with items.
+        Validates user, table, and food items exist.
+        Calculates total price automatically.
+        """
+        # Validate user exists
+        user = self.db.query(User).filter(User.id == order_in.user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Validate table exists
+        table = self.db.query(Table).filter(Table.id == order_in.table_id).first()
+        if not table:
+            raise HTTPException(status_code=404, detail="Table not found")
+
+        # Create order
+        if order_in.idempotency_key:
+            existing_order = self.db.query(Order).filter(
+                Order.idempotency_key == order_in.idempotency_key
+            ).first()
+            if existing_order:
+                # Return existing order if idempotency key matches (idempotent)
+                return existing_order
+
+        order = Order(
+            user_id=order_in.user_id,
+            table_id=order_in.table_id,
+            status="pending",
+            idempotency_key=order_in.idempotency_key,
+            special_instructions=order_in.special_instructions,
+        )
+        self.db.add(order)
+        self.db.flush()  # Get order ID without committing
+
+        total_price = 0.0
+
+        # Create order items and calculate total (with Row Locking for Race Conditions)
+        for item_data in order_in.items:
+            # Query food with Row Locking (FOR UPDATE)
+            food = (
+                self.db.query(Food)
+                .filter(Food.id == item_data.food_id)
+                .with_for_update()  # Prevent TC-ORDER-06 Race Condition
+                .first()
+            )
+
+            if not food:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Food with id {item_data.food_id} not found"
+                )
+
+            # Check stock/availability
+            if not food.is_available or (food.stock_quantity is not None and food.stock_quantity < item_data.quantity):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Food '{food.name}' is sold out or has insufficient stock"
+                )
+
+            # Update stock
+            if food.stock_quantity is not None:
+                food.stock_quantity -= item_data.quantity
+                if food.stock_quantity == 0:
+                    food.is_available = False
+
+            order_item = OrderItem(
+                order_id=order.id,
+                food_id=item_data.food_id,
+                quantity=item_data.quantity,
+                unit_price=food.price,  # Use price at time of order
+            )
+            self.db.add(order_item)
+            total_price += food.price * item_data.quantity
+
+        # Update order total price
+        order.total_price = total_price
+
+        self.db.commit()
+        self.db.refresh(order)
+
+        return order
+
+    def cancel_order(self, order_id: int, user_id: int) -> Order:
+        """
+        Cancel an order if within 2 minutes of creation.
+        Restores food stock if cancelled successfully.
+        """
+        from datetime import UTC, datetime
+        order = self.db.query(Order).filter(Order.id == order_id).first()
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        # Check ownership
+        if order.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
+
+        # Check cancellation window (2 minutes)
+        now = datetime.now(UTC)
+        # Handle timezone-naive datetime from database
+        created_at = order.created_at.replace(tzinfo=UTC) if order.created_at.tzinfo is None else order.created_at
+        if (now - created_at).total_seconds() > 120:
+            raise HTTPException(
+                status_code=400,
+                detail="Cancellation window (2 minutes) has expired. Please contact staff."
+            )
+
+        # Check if already processed
+        if order.status != "pending":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot cancel order with status: {order.status}"
+            )
+
+        # Restore stock using with_for_update to be safe
+        for item in order.items:
+            food = self.db.query(Food).filter(Food.id == item.food_id).with_for_update().first()
+            if food and food.stock_quantity is not None:
+                food.stock_quantity += item.quantity
+                food.is_available = True
+
+        order.status = "cancelled"
+        self.db.commit()
+        self.db.refresh(order)
+
+        return order
+
+    def update_order_status(self, order_id: int, status: str) -> Order:
+        """Update order status with validation."""
+        valid_statuses = ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"]
+
+        if status not in valid_statuses:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+
+        order = self.db.query(Order).filter(Order.id == order_id).first()
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        order.status = status
+        self.db.commit()
+        self.db.refresh(order)
+
+        return order
