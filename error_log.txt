@@ -1,0 +1,29 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0 -- D:\Work\project UET\Contacless Order Service\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\Work\project UET\Contacless Order Service
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/test_lead_guest.py::test_lead_guest_flow ERROR                     [100%]
+
+=================================== ERRORS ====================================
+___________________ ERROR at setup of test_lead_guest_flow ____________________
+file D:\Work\project UET\Contacless Order Service\tests\test_lead_guest.py, line 16
+  def test_lead_guest_flow(client: TestClient, db: Session):
+E       fixture 'db' not found
+>       available fixtures: _class_scoped_runner, _function_scoped_runner, _module_scoped_runner, _package_scoped_runner, _session_scoped_runner, admin_headers, admin_token, admin_user, anyio_backend, anyio_backend_name, anyio_backend_options, assert_json_structure, at_risk_customers, auth_headers, auth_token, authenticated_user, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, cov, create_menu, create_orders, create_payments, create_tables, create_users, db_session, db_snapshot, doctest_namespace, duplicate_payment_webhook, event_loop_policy, expired_token, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, guest_headers, guest_token, guest_user, invalid_phone_numbers, low_stock_food, monkeypatch, no_cover, now, old_order, pytestconfig, recent_order, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_food, sample_order, sample_payment, sample_table, seed_full_database, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, today, unavailable_food, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory, weak_passwords, yesterday
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+D:\Work\project UET\Contacless Order Service\tests\test_lead_guest.py:16
+============================== warnings summary ===============================
+app\schemas\table_session.py:15
+  D:\Work\project UET\Contacless Order Service\app\schemas\table_session.py:15: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TableSessionResponse(TableSessionBase):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/test_lead_guest.py::test_lead_guest_flow
+========================= 1 warning, 1 error in 0.01s =========================

@@ -14,11 +14,9 @@ class PaymentStatus(str, Enum):
 
 
 class PaymentProvider(str, Enum):
-    MOMO = "momo"
-    VNPAY = "vnpay"
-    ZALOPAY = "zalopay"
+    VIETQR = "vietqr"  # Zero-fee bank transfer via QR code
     CASH = "cash"
-    BANK_TRANSFER = "bank_transfer"
+    BANK_TRANSFER = "bank_transfer"  # Legacy/manual bank transfer
 
 
 class PaymentCreate(BaseModel):
@@ -67,3 +65,37 @@ class PaymentStatusResponse(BaseModel):
     amount: float
     provider: str
     message: str
+
+
+class VietQRResponse(BaseModel):
+    """Response containing VietQR payment details."""
+    id: int
+    order_id: int
+    amount: float
+    currency: str = "VND"
+    status: PaymentStatus
+    provider: str = "vietqr"
+    qr_url: str  # VietQR image URL
+    bank_id: str
+    account_no: str
+    account_name: str
+    transfer_content: str  # e.g., "THANH TOAN DON OC_123"
+    expires_at: datetime | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CassoTransaction(BaseModel):
+    """Single transaction from Casso webhook."""
+    id: str = Field(..., description="Casso transaction ID")
+    tid: str | None = Field(None, description="Bank transaction ID")
+    description: str = Field(..., description="Transfer content, contains order ID")
+    amount: float = Field(..., gt=0)
+    when: str | None = Field(None, description="Transaction timestamp")
+    bank_sub_acc_id: str | None = Field(None, description="Sub account ID")
+
+
+class CassoWebhookPayload(BaseModel):
+    """Casso webhook payload format."""
+    error: int = Field(0, description="Error code, 0 = success")
+    data: list[CassoTransaction] = Field(default_factory=list)

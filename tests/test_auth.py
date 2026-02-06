@@ -58,7 +58,7 @@ class TestLogin:
     
     def test_guest_login_success(self, client):
         """TC-AUTH-04: Successful Guest Login"""
-        response = client.post("/api/v1/auth/guest")
+        response = client.post("/api/v1/auth/guest", json={})
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "access_token" in data
@@ -106,7 +106,7 @@ class TestSessionManagement:
     def test_guest_re_entry_cookie(self, client, db_session):
         """TC-AUTH-07: Guest Re-entry using Cookie"""
         # 1. First Guest Login
-        resp1 = client.post("/api/v1/auth/guest")
+        resp1 = client.post("/api/v1/auth/guest", json={})
         assert resp1.status_code == status.HTTP_200_OK
         cookie_value = resp1.cookies.get("guest_user_id")
         user_id_1 = resp1.json().get("user_id") # Assuming response returns user info or we decode token
@@ -116,7 +116,7 @@ class TestSessionManagement:
         
         # 2. Second Call with Cookie
         client.cookies.set("guest_user_id", cookie_value)
-        resp2 = client.post("/api/v1/auth/guest")
+        resp2 = client.post("/api/v1/auth/guest", json={})
         assert resp2.status_code == status.HTTP_200_OK
         
         # Should NOT create new user. 
@@ -138,7 +138,7 @@ class TestSessionManagement:
     def test_user_logout(self, client):
         """TC-AUTH-08: User Logout"""
         # 1. Login as guest to set cookie
-        client.post("/api/v1/auth/guest")
+        client.post("/api/v1/auth/guest", json={})
         assert "guest_user_id" in client.cookies
         
         # 2. Logout

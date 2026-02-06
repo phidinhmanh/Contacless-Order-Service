@@ -1,0 +1,2383 @@
+﻿node.exe
+ : FAIL 
+tests/un
+it/payme
+nt-polli
+ng.test.
+tsx 
+(20.038 
+s)
+At 
+line:1 
+char:1
++ & "C:\
+Program 
+Files\no
+dejs/nod
+e.exe" "
+C:\Users
+\ASUS\Ap
+pData\Ro
+aming\n 
+...
++ ~~~~~~
+~~~~~~~~
+~~~~~~~~
+~~~~~~~~
+~~~~~~~~
+~~~~~~~~
+~~~~~~~~
+~~~~~~~~
+~~~~~~~
+    + C 
+   ate  
+  gor   
+ yIn    
+fo      
+        
+        
+    : N 
+   otS  
+  pec   
+ ifi    
+ed:     
+(F    
+AIL     
+te    
+sts    
+/un    
+it.    
+...    
+tsx     
+(2    
+0.0    
+38     
+s):    
+Str    
+ing    
+) [    
+],     
+Rem    
+ote    
+Exc    
+ept    
+ion
+    + F 
+   ull  
+  yQu   
+ ali    
+fie    
+dEr    
+ror    
+Id     
+: N    
+ati    
+veC    
+omm    
+and    
+Err    
+or
+ 
+  
+VietQR 
+Payment 
+Polling
+    ├ù F
+rontend 
+polls 
+payment 
+status 
+(15118 
+ms)
+    ΓêÜ 
+Redirect
+ion 
+after 
+success 
+(4073 
+ms)
+
+  ΓùÅ 
+VietQR 
+Payment 
+Polling 
+ΓÇ║ Fron
+tend 
+polls 
+payment 
+status
+
+    
+Polling 
+call /pa
+yments/9
+99 not 
+found
+
+    
+Ignored 
+nodes: c
+omments,
+ 
+script, 
+style
+    [36
+m<html>
+[39m
+      [
+36m<head
+ />[39m
+      [
+36m<body
+>[39m
+        
+[36m<di
+v>[39m
+        
+  [36m<
+div[39m
+        
+    [33
+mclass[
+39m=[32
+m"min-h-
+screen b
+g-dark-b
+g flex f
+lex-col"
+[39m
+        
+  [36m>
+[39m
+        
+    [36
+m<header
+[39m
+        
+      [
+33mclass
+[39m=[
+32m"stic
+ky 
+top-0 
+z-40 bg-
+dark-bg/
+95 backd
+rop-blur
+-md bord
+er-b bor
+der-dark
+-border"
+[39m
+        
+    [36
+m>[39m
+        
+      [
+36m<div
+[39m
+        
+        
+[33mcla
+ss[39m=
+[32m"px
+-4 py-4 
+flex ite
+ms-cente
+r gap-4"
+[39m
+        
+      [
+36m>[39
+m
+        
+        
+[36m<bu
+tton[39
+m
+        
+        
+  [33mc
+lass[39
+m=[32m"
+w-10 
+h-10 rou
+nded-ful
+l bg-dar
+k-card 
+flex ite
+ms-cente
+r justif
+y-center
+ text-te
+xt-secon
+dary hov
+er:text-
+text-pri
+mary tra
+nsition-
+colors"
+[39m
+        
+        
+[36m>[
+39m
+        
+        
+  [36m<
+svg[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"lucide
+ lucide-
+arrow-le
+ft 
+"[39m
+        
+        
+    [33
+mfill[3
+9m=[32m
+"none"[
+39m
+        
+        
+    [33
+mheight
+[39m=[3
+2m"20"[
+39m
+        
+        
+    [33
+mstroke
+[39m=[3
+2m"curre
+ntColor"
+[39m
+        
+        
+    [33
+mstroke-
+linecap
+[39m=[3
+2m"round
+"[39m
+        
+        
+    [33
+mstroke-
+linejoin
+[39m=[
+32m"roun
+d"[39m
+        
+        
+    [33
+mstroke-
+width[3
+9m=[32m
+"2"[39m
+        
+        
+    [33
+mviewBox
+[39m=[
+32m"0 0 
+24 
+24"[39m
+        
+        
+    [33
+mwidth[
+39m=[32
+m"20"[3
+9m
+        
+        
+    [33
+mxmlns[
+39m=[32
+m"http:/
+/www.w3.
+org/2000
+/svg"[3
+9m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<path[
+39m
+        
+        
+      [
+33md[39
+m=[32m"
+m12 
+19-7-7 7
+-7"[39m
+        
+        
+    [36
+m/>[39m
+        
+        
+    [36
+m<path[
+39m
+        
+        
+      [
+33md[39
+m=[32m"
+M19 12H5
+"[39m
+        
+        
+    [36
+m/>[39m
+        
+        
+  [36m<
+/svg>[3
+9m
+        
+        
+[36m</b
+utton>[
+39m
+        
+        
+[36m<di
+v>[39m
+        
+        
+  [36m<
+h1[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"text-l
+g font-b
+old text
+-text-pr
+imary"[
+39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [0m
+Thanh to
+├ín[0m
+        
+        
+  [36m<
+/h1>[39
+m
+        
+        
+  [36m<
+p[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"text-s
+m text-t
+ext-mute
+d"[39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [0m
+Chß╗ìn p
+h╞░╞íng 
+thß╗⌐c 
+thanh to
+├ín[0m
+        
+        
+  [36m<
+/p>[39m
+        
+        
+[36m</d
+iv>[39m
+        
+      [
+36m</div
+>[39m
+        
+    [36
+m</heade
+r>[39m
+        
+    [36
+m<main[
+39m
+        
+      [
+33mclass
+[39m=[
+32m"flex
+-1 p-4 s
+pace-y-6
+"[39m
+        
+    [36
+m>[39m
+        
+      [
+36m<div
+[39m
+        
+        
+[33mani
+mate[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+        
+[33mcla
+ss[39m=
+[32m"bg
+-dark-ca
+rd 
+border b
+order-da
+rk-borde
+r rounde
+d-2xl p-
+4"[39m
+        
+        
+[33mini
+tial[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+      [
+36m/>[3
+9m
+        
+      [
+36m<div
+[39m
+        
+        
+[33mani
+mate[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+        
+[33mcla
+ss[39m=
+[32m"bg
+-dark-ca
+rd 
+border b
+order-da
+rk-borde
+r rounde
+d-2xl p-
+4"[39m
+        
+        
+[33mini
+tial[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+        
+[33mtra
+nsition
+[39m=[3
+2m"[obje
+ct Objec
+t]"[39m
+        
+      [
+36m>[39
+m
+        
+        
+[36m<di
+v[39m
+        
+        
+  [33mc
+lass[39
+m=[32m"
+flex ite
+ms-cente
+r justif
+y-betwee
+n"[39m
+        
+        
+[36m>[
+39m
+        
+        
+  [36m<
+div>[39
+m
+        
+        
+    [36
+m<p[39m
+        
+        
+      [
+33mclass
+[39m=[
+32m"text
+-text-mu
+ted text
+-sm"[39
+m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+0mSß╗æ 
+tiß╗ün 
+thanh to
+├ín[0m
+        
+        
+    [36
+m</p>[3
+9m
+        
+        
+    [36
+m<p[39m
+        
+        
+      [
+33mclass
+[39m=[
+32m"text
+-2xl fon
+t-bold t
+ext-prim
+ary-400"
+[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+0m50.000
+┬áΓé½[0
+m
+        
+        
+    [36
+m</p>[3
+9m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+  [36m<
+div[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"w-12 
+h-12 rou
+nded-ful
+l bg-pri
+mary-500
+/20 
+flex ite
+ms-cente
+r justif
+y-center
+"[39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<svg[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"luci
+de lucid
+e-credit
+-card te
+xt-prima
+ry-400"
+[39m
+        
+        
+      [
+33mfill
+[39m=[3
+2m"none"
+[39m
+        
+        
+      [
+33mheigh
+t[39m=
+[32m"24"
+[39m
+        
+        
+      [
+33mstrok
+e[39m=
+[32m"cur
+rentColo
+r"[39m
+        
+        
+      [
+33mstrok
+e-lineca
+p[39m=
+[32m"rou
+nd"[39m
+        
+        
+      [
+33mstrok
+e-linejo
+in[39m=
+[32m"ro
+und"[39
+m
+        
+        
+      [
+33mstrok
+e-width
+[39m=[3
+2m"2"[3
+9m
+        
+        
+      [
+33mviewB
+ox[39m=
+[32m"0 
+0 24 
+24"[39m
+        
+        
+      [
+33mwidth
+[39m=[
+32m"24"
+[39m
+        
+        
+      [
+33mxmlns
+[39m=[
+32m"http
+://www.w
+3.org/20
+00/svg"
+[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+36m<rect
+[39m
+        
+        
+        
+[33mhei
+ght[39m
+=[32m"1
+4"[39m
+        
+        
+        
+[33mrx
+[39m=[3
+2m"2"[3
+9m
+        
+        
+        
+[33mwid
+th[39m=
+[32m"20
+"[39m
+        
+        
+        
+[33mx[
+39m=[32
+m"2"[39
+m
+        
+        
+        
+[33my[
+39m=[32
+m"5"[39
+m
+        
+        
+      [
+36m/>[3
+9m
+        
+        
+      [
+36m<line
+[39m
+        
+        
+        
+[33mx1
+[39m=[3
+2m"2"[3
+9m
+        
+        
+        
+[33mx2
+[39m=[3
+2m"22"[
+39m
+        
+        
+        
+[33my1
+[39m=[3
+2m"10"[
+39m
+        
+        
+        
+[33my2
+[39m=[3
+2m"10"[
+39m
+        
+        
+      [
+36m/>[3
+9m
+        
+        
+    [36
+m</svg>
+[39m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+[36m</d
+iv>[39m
+        
+      [
+36m</div
+>[39m
+        
+      [
+36m<div
+[39m
+        
+        
+[33mani
+mate[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+        
+[33mcla
+ss[39m=
+[32m"sp
+ace-y-3"
+[39m
+        
+        
+[33mini
+tial[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+        
+[33mtra
+nsition
+[39m=[3
+2m"[obje
+ct Objec
+t]"[39m
+        
+      [
+36m>[39
+m
+        
+        
+[36m<h2
+[39m
+        
+        
+  [33mc
+lass[39
+m=[32m"
+text-sm 
+font-med
+ium text
+-text-se
+condary 
+mb-3"[3
+9m
+        
+        
+[36m>[
+39m
+        
+        
+  [0mPh
+╞░╞íng 
+thß╗⌐c 
+thanh to
+├ín[0m
+        
+        
+[36m</h
+2>[39m
+        
+        
+[36m<bu
+tton>[3
+9m
+        
+        
+  
+[0mPay 
+with Vie
+tQR[0m
+        
+        
+[36m</b
+utton>[
+39m
+        
+        
+[36m<di
+v[39m
+        
+        
+  [33mc
+lass[39
+m=[32m"
+relative
+ py-4"[
+39m
+        
+        
+[36m>[
+39m
+        
+        
+  [36m<
+div[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"absolu
+te 
+inset-0 
+flex ite
+ms-cente
+r"[39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<div[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"w-fu
+ll borde
+r-t bord
+er-dark-
+border"
+[39m
+        
+        
+    [36
+m/>[39m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+  [36m<
+div[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"relati
+ve flex 
+justify-
+center"
+[39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<span[
+39m
+        
+        
+      [
+33mclass
+[39m=[
+32m"px-3
+ bg-dark
+-bg text
+-text-mu
+ted text
+-sm"[39
+m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+0mhoß║╖c
+[0m
+        
+        
+    [36
+m</span>
+[39m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+[36m</d
+iv>[39m
+        
+        
+[36m<bu
+tton>[3
+9m
+        
+        
+  
+[0mPay 
+with 
+Cash[0m
+        
+        
+[36m</b
+utton>[
+39m
+        
+      [
+36m</div
+>[39m
+        
+    [36
+m</main>
+[39m
+        
+    [36
+m<footer
+[39m
+        
+      [
+33mclass
+[39m=[
+32m"p-4 
+text-cen
+ter text
+-text-mu
+ted text
+-xs"[39
+m
+        
+    [36
+m>[39m
+        
+      [
+36m<p>[
+39m
+        
+        
+[0mThan
+h to├ín 
+an 
+to├án 
+v├á 
+bß║úo 
+mß║¡t 
+ΓÇó 0% 
+ph├¡ 
+giao dß╗
+ïch[0m
+        
+      [
+36m</p>
+[39m
+        
+    [36
+m</foote
+r>[39m
+        
+    [36
+m<div[3
+9m
+        
+      [
+33manima
+te[39m=
+[32m"[o
+bject Ob
+ject]"[
+39m
+        
+      [
+33mclass
+[39m=[
+32m"fixe
+d 
+inset-0 
+z-50 
+flex ite
+ms-cente
+r justif
+y-center
+ bg-blac
+k/80 p-4
+"[39m
+        
+      [
+33mexit
+[39m=[3
+2m"[obje
+ct Objec
+t]"[39m
+        
+      [
+33miniti
+al[39m=
+[32m"[o
+bject Ob
+ject]"[
+39m
+        
+    [36
+m>[39m
+        
+      [
+36m<div
+[39m
+        
+        
+[33mani
+mate[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+        
+[33mcla
+ss[39m=
+[32m"bg
+-dark-ca
+rd 
+border b
+order-da
+rk-borde
+r rounde
+d-3xl 
+w-full m
+ax-w-sm 
+overflow
+-hidden"
+[39m
+        
+        
+[33mexi
+t[39m=
+[32m"[ob
+ject Obj
+ect]"[3
+9m
+        
+        
+[33mini
+tial[39
+m=[32m"
+[object 
+Object]"
+[39m
+        
+      [
+36m>[39
+m
+        
+        
+[36m<di
+v[39m
+        
+        
+  [33mc
+lass[39
+m=[32m"
+flex ite
+ms-cente
+r justif
+y-betwee
+n p-4 bo
+rder-b b
+order-da
+rk-borde
+r"[39m
+        
+        
+[36m>[
+39m
+        
+        
+  [36m<
+h3[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"text-l
+g font-b
+old text
+-text-pr
+imary"[
+39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [0m
+Qu├⌐t 
+m├ú QR 
+─æß╗â 
+thanh to
+├ín[0m
+        
+        
+  [36m<
+/h3>[39
+m
+        
+        
+  [36m<
+button[
+39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"w-8 
+h-8 roun
+ded-full
+ bg-dark
+-bg 
+flex ite
+ms-cente
+r justif
+y-center
+ text-te
+xt-muted
+ hover:t
+ext-text
+-primary
+"[39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<svg[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"luci
+de lucid
+e-x 
+"[39m
+        
+        
+      [
+33mfill
+[39m=[3
+2m"none"
+[39m
+        
+        
+      [
+33mheigh
+t[39m=
+[32m"18"
+[39m
+        
+        
+      [
+33mstrok
+e[39m=
+[32m"cur
+rentColo
+r"[39m
+        
+        
+      [
+33mstrok
+e-lineca
+p[39m=
+[32m"rou
+nd"[39m
+        
+        
+      [
+33mstrok
+e-linejo
+in[39m=
+[32m"ro
+und"[39
+m
+        
+        
+      [
+33mstrok
+e-width
+[39m=[3
+2m"2"[3
+9m
+        
+        
+      [
+33mviewB
+ox[39m=
+[32m"0 
+0 24 
+24"[39m
+        
+        
+      [
+33mwidth
+[39m=[
+32m"18"
+[39m
+        
+        
+      [
+33mxmlns
+[39m=[
+32m"http
+://www.w
+3.org/20
+00/svg"
+[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+36m<path
+[39m
+        
+        
+        
+[33md[
+39m=[32
+m"M18 6 
+6 
+18"[39m
+        
+        
+      [
+36m/>[3
+9m
+        
+        
+      [
+36m<path
+[39m
+        
+        
+        
+[33md[
+39m=[32
+m"m6 6 
+12 
+12"[39m
+        
+        
+      [
+36m/>[3
+9m
+        
+        
+    [36
+m</svg>
+[39m
+        
+        
+  [36m<
+/button>
+[39m
+        
+        
+[36m</d
+iv>[39m
+        
+        
+[36m<di
+v[39m
+        
+        
+  [33mc
+lass[39
+m=[32m"
+p-6 spac
+e-y-4"[
+39m
+        
+        
+[36m>[
+39m
+        
+        
+  [36m<
+div[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"bg-whi
+te round
+ed-2xl 
+p-4 
+flex ite
+ms-cente
+r justif
+y-center
+"[39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<img[3
+9m
+        
+        
+      [
+33malt[
+39m=[32
+m"VietQR
+ 
+Payment 
+Code"[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"w-fu
+ll max-w
+-[256px]
+ h-auto"
+[39m
+        
+        
+      [
+33msrc[
+39m=[32
+m"http:/
+/qr"[39
+m
+        
+        
+    [36
+m/>[39m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+  [36m<
+div[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"text-c
+enter"[
+39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<p[39m
+        
+        
+      [
+33mclass
+[39m=[
+32m"text
+-text-mu
+ted text
+-sm"[39
+m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+0mSß╗æ t
+iß╗ün[0
+m
+        
+        
+    [36
+m</p>[3
+9m
+        
+        
+    [36
+m<p[39m
+        
+        
+      [
+33mclass
+[39m=[
+32m"text
+-2xl fon
+t-bold t
+ext-prim
+ary-400"
+[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+0m50.000
+┬áΓé½[0
+m
+        
+        
+    [36
+m</p>[3
+9m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+  [36m<
+div[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"bg-dar
+k-bg rou
+nded-xl 
+p-4 spac
+e-y-2"[
+39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<div[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"flex
+ justify
+-between
+"[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-text-
+muted te
+xt-sm"[
+39m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0mNg├ó
+n h├áng
+[0m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-text-
+primary 
+font-med
+ium uppe
+rcase"[
+39m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0mICB
+[0m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+    [36
+m</div>
+[39m
+        
+        
+    [36
+m<div[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"flex
+ justify
+-between
+"[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-text-
+muted te
+xt-sm"[
+39m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0mSß╗æ
+ t├ái kh
+oß║ún[0
+m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-text-
+primary 
+font-med
+ium"[39
+m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0m123
+[0m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+    [36
+m</div>
+[39m
+        
+        
+    [36
+m<div[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"flex
+ justify
+-between
+"[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-text-
+muted te
+xt-sm"[
+39m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0mChß╗
+º t├ái k
+hoß║ún[
+0m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-text-
+primary 
+font-med
+ium"[39
+m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0mTEST
+[0m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+    [36
+m</div>
+[39m
+        
+        
+    [36
+m<div[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"flex
+ justify
+-between
+"[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-text-
+muted te
+xt-sm"[
+39m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0mNß╗Ö
+i dung 
+CK[0m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+      [
+36m<span
+[39m
+        
+        
+        
+[33mcla
+ss[39m=
+[32m"te
+xt-prima
+ry-400 f
+ont-medi
+um text-
+sm"[39m
+        
+        
+      [
+36m>[39
+m
+        
+        
+        
+[0mTEST
+[0m
+        
+        
+      [
+36m</spa
+n>[39m
+        
+        
+    [36
+m</div>
+[39m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+  [36m<
+div[39m
+        
+        
+    [33
+mclass[
+39m=[32
+m"flex i
+tems-cen
+ter just
+ify-cent
+er 
+gap-2 te
+xt-text-
+muted"[
+39m
+        
+        
+  [36m>
+[39m
+        
+        
+    [36
+m<svg[3
+9m
+        
+        
+      [
+33mclass
+[39m=[
+32m"luci
+de lucid
+e-loader
+2 w-4 
+h-4 anim
+ate-spin
+"[39m
+        
+        
+      [
+33mfill
+[39m=[3
+2m"none"
+[39m
+        
+        
+      [
+33mheigh
+t[39m=
+[32m"24"
+[39m
+        
+        
+      [
+33mstrok
+e[39m=
+[32m"cur
+rentColo
+r"[39m
+        
+        
+      [
+33mstrok
+e-lineca
+p[39m=
+[32m"rou
+nd"[39m
+        
+        
+      [
+33mstrok
+e-linejo
+in[39m=
+[32m"ro
+und"[39
+m
+        
+        
+      [
+33mstrok
+e-width
+[39m=[3
+2m"2"[3
+9m
+        
+        
+      [
+33mviewB
+ox[39m=
+[32m"0 
+0 24 
+24"[39m
+        
+        
+      [
+33mwidth
+[39m=[
+32m"24"
+[39m
+        
+        
+      [
+33mxmlns
+[39m=[
+32m"http
+://www.w
+3.org/20
+00/svg"
+[39m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+36m<path
+[39m
+        
+        
+        
+[33md[
+39m=[32
+m"M21 
+12a9 9 
+0 1 1-6.
+219-8.56
+"[39m
+        
+        
+      [
+36m/>[3
+9m
+        
+        
+    [36
+m</svg>
+[39m
+        
+        
+    [36
+m<span[
+39m
+        
+        
+      [
+33mclass
+[39m=[
+32m"text
+-sm"[39
+m
+        
+        
+    [36
+m>[39m
+        
+        
+      [
+0m─Éang 
+chß╗¥ 
+thanh to
+├ín...[
+0m
+        
+        
+    [36
+m</span>
+[39m
+        
+        
+  [36m<
+/div>[3
+9m
+        
+        
+[36m</d
+iv>[39m
+        
+      [
+36m</div
+>[39m
+        
+    [36
+m</div>
+[39m
+        
+  [36m<
+/div>[3
+9m
+        
+[36m</d
+iv>[39m
+      [
+36m</bod
+y>[39m
+    [36
+m</html>
+[39m
+
+    
+[0m 
+[90m 
+71 
+|[39m  
+       
+[36mawai
+t[39m w
+aitFor((
+) [33m=
+>[39m {
+     
+[90m 
+72 
+|[39m  
+        
+   [36m
+const[3
+9m 
+hasCall 
+[33m=[
+39m (api
+[33m.[
+39m[36m
+get[39m
+ [36mas
+[39m je
+st[33m.
+[39m[3
+3mMock[
+39m)[33
+m.[39mm
+ock[33m
+.[39mca
+lls[33m
+.[39mso
+me(call 
+[33m=>
+[39m cal
+l[[35m0
+[39m] 
+[33m===
+[39m [3
+2m'/paym
+ents/999
+'[39m)
+[33m;[3
+9m
+    [31
+m[1m>[
+22m[39m
+[90m 
+73 
+|[39m  
+        
+   [36m
+if[39m 
+([33m!
+[39mhasC
+all) [3
+6mthrow
+[39m [3
+6mnew[3
+9m [33m
+Error[3
+9m([32m
+'Polling
+ call /p
+ayments/
+999 not 
+found'[
+39m)[33
+m;[39m
+     
+[90m   
+ |[39m 
+        
+        
+        
+        
+[31m[1
+m^[22m
+[39m
+     
+[90m 
+74 
+|[39m  
+        
+   [36m
+return[
+39m [36
+mtrue[3
+9m[33m;
+[39m
+     
+[90m 
+75 
+|[39m  
+       }
+[33m,[
+39m { ti
+meout[3
+3m:[39m
+ [35m15
+000[39m
+ })[33m
+;[39m
+     
+[90m 
+76 
+|[39m  
+   }[33
+m,[39m 
+[35m400
+00[39m)
+[33m;[
+39m[0m
+
+      
+at 
+timeout 
+(tests/u
+nit/paym
+ent-poll
+ing.test
+.tsx:73:
+33)
+      
+at runWi
+thExpens
+iveError
+Diagnost
+icsDisab
+led (nod
+e_module
+s/@testi
+ng-libra
+ry/dom/d
+ist/conf
+ig.js:47
+:12)
+      
+at check
+Callback
+ (node_m
+odules/@
+testing-
+library/
+dom/dist
+/wait-fo
+r.js:124
+:77)
+      
+at Mutat
+ionObser
+ver.chec
+kRealTim
+ersCallb
+ack (nod
+e_module
+s/@testi
+ng-libra
+ry/dom/d
+ist/wait
+-for.js:
+118:16)
+      
+at Mutat
+ionObser
+ver.invo
+keTheCal
+lbackFun
+ction (n
+ode_modu
+les/jsdo
+m/lib/js
+dom/livi
+ng/gener
+ated/Mut
+ationCal
+lback.js
+:19:26)
+      
+at notif
+yMutatio
+nObserve
+rs (node
+_modules
+/jsdom/l
+ib/jsdom
+/living/
+helpers/
+mutation
+-observe
+rs.js:16
+0:22)
+      
+at node_
+modules/
+jsdom/li
+b/jsdom/
+living/h
+elpers/m
+utation-
+observer
+s.js:133
+:5
+
+Test 
+Suites: 
+1 
+failed, 
+1 total
+Tests:  
+     1 
+failed, 
+1 
+passed, 
+2 total
+Snapshot
+s:   0 
+total
+Time:   
+     
+20.509 s
+Ran all 
+test 
+suites m
+atching 
+/tests\\
+unit\\pa
+yment-po
+lling.te
+st.tsx/i
+.

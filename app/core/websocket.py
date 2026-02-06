@@ -19,8 +19,7 @@ class ConnectionManager:
         self.active_connections: Dict[str, Set[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, channel: str = "default"):
-        """Accept and register a WebSocket connection."""
-        await websocket.accept()
+        """Register a WebSocket connection."""
         if channel not in self.active_connections:
             self.active_connections[channel] = set()
         self.active_connections[channel].add(websocket)
@@ -40,7 +39,7 @@ class ConnectionManager:
             return
 
         disconnected = set()
-        for connection in self.active_connections[channel]:
+        for connection in list(self.active_connections[channel]):
             try:
                 await connection.send_json(message)
             except Exception:
@@ -48,7 +47,7 @@ class ConnectionManager:
 
         # Clean up disconnected clients
         for conn in disconnected:
-            self.active_connections[channel].discard(conn)
+            self.disconnect(conn, channel)
 
     async def broadcast_to_all(self, message: dict):
         """Broadcast message to all channels."""

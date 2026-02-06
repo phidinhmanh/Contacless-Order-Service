@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import jwt
 from sqlalchemy.orm import Session
@@ -19,7 +19,7 @@ from app.core.security import (
 )
 from app.crud import crud_user
 from app.models.user import User
-from app.schemas.auth import RefreshTokenRequest, Token
+from app.schemas.auth import RefreshTokenRequest, Token , GuestLoginRequest
 from app.schemas.user import UserCreate, UserResponse
 
 router = APIRouter()
@@ -70,9 +70,12 @@ def login(
     - Returns access and refresh tokens
     - Access token expires in 24 hours
     """
+    # Strip whitespace to handle potential copy-paste issues (TC-AUTH-01)
+    username = form_data.username.strip()
+    
     # Find user by phone number
-    user = crud_user.get_by_phone(db, phone_number=form_data.username)
-
+    user = crud_user.get_by_phone(db, phone_number=username)
+    
     if not user or not user.hashed_password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -142,10 +145,10 @@ def refresh_token(
 
 @router.post("/guest", response_model=Token)
 def login_as_guest(
+    request_data : GuestLoginRequest,
     db: Annotated[Session, Depends(get_db)],
     response: Response,
-    table_id: int | None = None,
-    guest_user_id: Annotated[str | None, Depends(lambda: None)] = None, # Placeholder for cookie injection logic
+    guest_user_id: str | None = Cookie(None), # Placeholder for cookie injection logic
 ):
     """
     Login as an anonymous guest.
@@ -182,21 +185,15 @@ def login_as_guest(
         samesite="lax"
     )
 
-    # 30-day expiry for LTV
-    expires = datetime.now(UTC) + timedelta(days=GUEST_TOKEN_EXPIRE_DAYS)
-
     # Include table_id in token payload if provided (TC-ORDER-07)
-    token_data = {
-        "sub": str(user.id), 
-        "type": "access",
-        "exp": expires,
-        "iat": datetime.now(UTC)
-    }
-    if table_id:
-        token_data["table_id"] = table_id
+    extra_claims = {}
+    if request_data.table_id:
+        extra_claims["table_id"] = request_data.table_id
 
-    access_token = jwt.encode(
-        token_data, settings.SECRET_KEY, algorithm=ALGORITHM
+    access_token = create_access_token(
+        subject=user.id,
+        expires_delta=timedelta(days=GUEST_TOKEN_EXPIRE_DAYS),
+        extra_claims=extra_claims
     )
 
     return Token(
@@ -213,3 +210,47 @@ def logout(response: Response):
     """
     response.delete_cookie("guest_user_id")
     return {"detail": "Successfully logged out"}
+
+
+@router.post("/guest/demographics")
+def update_guest_demographics(
+    db: Annotated[Session, Depends(get_db)],
+    guest_id: int,
+    gender: str | None = None,
+    age_group: str | None = None,
+):
+    """
+    Update demographics for a guest user (no auth required).
+    
+    - guest_id: The guest user ID from cookie/localStorage
+    - gender: male, female, other
+    - age_group: under_18, 18_24, 25_34, 35_44, 45_54, 55_plus
+    """
+    # Find the guest user (users without phone number)
+    user = db.query(User).filter(
+        User.id == guest_id,
+        User.phone_number.is_(None)  # Ensure it's a guest
+    ).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest user not found"
+        )
+    
+    # Update demographics
+    if gender:
+        user.gender = gender
+    if age_group:
+        user.age_group = age_group
+    
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "detail": "Demographics updated successfully",
+        "user_id": user.id,
+        "gender": user.gender,
+        "age_group": user.age_group,
+    }
+

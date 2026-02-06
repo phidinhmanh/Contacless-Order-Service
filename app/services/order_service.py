@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.food import Food
-from app.models.order import Order, OrderItem
+from app.models.order import Order, OrderItem, OrderStatus
 from app.models.table import Table
 from app.models.user import User
 from app.schemas.order import OrderCreate
@@ -25,10 +25,11 @@ class OrderService:
         Validates user, table, and food items exist.
         Calculates total price automatically.
         """
-        # Validate user exists
-        user = self.db.query(User).filter(User.id == order_in.user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+        # Validate user exists (only if user_id is provided - guest orders don't require it)
+        if order_in.user_id is not None:
+            user = self.db.query(User).filter(User.id == order_in.user_id).first()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
 
         # Validate table exists
         table = self.db.query(Table).filter(Table.id == order_in.table_id).first()
@@ -102,7 +103,7 @@ class OrderService:
 
         return order
 
-    def cancel_order(self, order_id: int, user_id: int) -> Order:
+    def cancel_order(self, order_id: int, user_id: int | None) -> Order:
         """
         Cancel an order if within 2 minutes of creation.
         Restores food stock if cancelled successfully.
@@ -112,8 +113,8 @@ class OrderService:
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
 
-        # Check ownership
-        if order.user_id != user_id:
+        # Check ownership (skip for guest orders where both are None)
+        if order.user_id is not None and order.user_id != user_id:
             raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
 
         # Check cancellation window (2 minutes)
@@ -146,21 +147,23 @@ class OrderService:
 
         return order
 
-    def update_order_status(self, order_id: int, status: str) -> Order:
-        """Update order status with validation."""
-        valid_statuses = ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"]
-
-        if status not in valid_statuses:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
-            )
-
+    def advance_order_status(self, order_id: int) -> Order:
+        """
+        Advance order status to the next logical state.
+        PENDING -> CONFIRMED -> PREPARING -> READY -> COMPLETED
+        """
         order = self.db.query(Order).filter(Order.id == order_id).first()
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
 
-        order.status = status
+        next_status = OrderStatus.get_next_status(order.status)
+        if not next_status:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot advance order from status: {order.status}"
+            )
+
+        order.status = next_status
         self.db.commit()
         self.db.refresh(order)
 

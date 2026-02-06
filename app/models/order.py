@@ -15,7 +15,17 @@ class OrderStatus(str, Enum):
     READY = "ready"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
-    PAYMENT_FAILED = "payment_failed"
+
+    @classmethod
+    def get_next_status(cls, current_status: str) -> str | None:
+        """Simplified state machine for order status transitions."""
+        transitions = {
+            cls.PENDING: cls.CONFIRMED,
+            cls.CONFIRMED: cls.PREPARING,
+            cls.PREPARING: cls.READY,
+            cls.READY: cls.COMPLETED,
+        }
+        return transitions.get(current_status)
 
 
 class Order(Base):
@@ -54,3 +64,9 @@ class OrderItem(Base):
     # Relationships
     order = relationship("Order", back_populates="items")
     food = relationship("Food", back_populates="order_items")
+
+    @property
+    def food_name(self) -> str | None:
+        """Get food name from relationship for API response."""
+        return self.food.name if self.food else None
+

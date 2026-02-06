@@ -80,3 +80,65 @@ This document defines the test scenarios that must be satisfied for the customer
 | TC-GDPR-02 | Unauthorized Export | User A tries export User B | 403 Forbidden | ✅ |
 | TC-GDPR-03 | Data Privacy | View User JSON | `hashed_password` must be absent from payload | ✅ |
 | TC-SEC-01 | Sensitive History | GET `/orders/user/{uid}` | 404/405 (Endpoint REMOVED for security) | ✅ |
+| TC-SEC-02 | PII Scrubbing | Order Cancelled | PII scrubbed from analytics cache if applicable | ✅ |
+
+---
+
+## 7. Lead Guest Strategy
+
+| ID | Scenario | Pre-conditions | Expected Result | Status |
+|----|----------|----------------|-----------------|--------|
+| TC-LEAD-01 | Guest Count Capture | QR scan | `TableSession` created with `guest_count`, popup flow transitions | ✅ |
+| TC-LEAD-02 | Lead Info Update | No phone in profile | `PATCH /me/lead-info` updates `full_name` and `phone_number` | ✅ |
+| TC-LEAD-03 | Verified Data Handshake | Sender name in payment | `User.full_name` updated from bank description | ✅ |
+| TC-LEAD-04 | Table Session Tracking | Active table session | `GET /tables/{id}/session` returns `guest_count` and `lead_user_id` | ✅ |
+
+---
+
+## 8. Frontend & Integration (New)
+
+| ID | Scenario | Pre-conditions | Expected Result | Status |
+|----|----------|----------------|-----------------|--------|
+| TC-FE-01 | Cart State | Add item to cart | Count updates, Total price correct, Persists on reload | ✅ |
+| TC-FE-02 | Payment Polling | Open VietQR modal | Frontend polls status every 2s, Redirects on success | ✅ |
+| TC-FE-03 | E2E Order Flow | Guest user | Complete flow: Scan -> Menu -> Cart -> Order -> Pay -> Success | ✅ |
+| TC-FE-04 | Race Condition (UI) | 2 browsers, 1 stock | Users click simultaneously: One success, one "Sold Out" error | ✅ |
+| TC-FE-05 | Mobile Responsive | Viewport 375x667 | Menu cards stack vertically, no horizontal scroll | ✅ |
+| TC-FE-06 | Offline Handling | Network disconnected | "No Internet" error on action, Cart data preserved | ✅ |
+| TC-FE-07 | WebSocket Notification | Kitchen Client connected | New order appears in < 2 seconds | ✅ |
+| TC-FE-08 | Load Test | 20 Concurrent Users | Avg response < 1s, No 500 errors | ✅ |
+
+---
+
+## 🛠 Testing & Maintenance Guide
+
+### 1. How to Run Tests
+
+#### **Backend Tests (Pytest)**
+Ensure your virtual environment is active, then run:
+```bash
+# Run all backend tests
+.venv/Scripts/python -m pytest
+
+# Run only integration tests
+.venv/Scripts/python -m pytest tests/test_integration.py
+```
+
+#### **Frontend Tests (Jest & Playwright)**
+Navigate to the `frontend` directory and install dependencies first:
+```bash
+cd frontend
+npm install -D jest jest-environment-jsdom @testing-library/react @testing-library/jest-dom @types/jest ts-jest playwright @playwright/test
+npx playwright install
+
+# Run Unit Tests
+npx jest
+
+# Run E2E/Race Condition/Mobile Tests
+npx playwright test
+```
+
+### 2. How to Update this Document
+- **Status Column**: Use ✅ for passed, ❌ for failed, and 🟡 for in-progress.
+- **New Scenarios**: When adding a feature, add a new row to the relevant category and define the `TC-ID` following the existing naming convention (e.g., `TC-AUTH-09`).
+- **Proof of Work**: After running tests, update the Status column to reflect the latest results before pushing to production.

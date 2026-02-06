@@ -1,0 +1,252 @@
+﻿node.exe : FAIL tests/unit/payment-polling.test.tsx (10.718 s)
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\ASUS\AppData\Roaming\n ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL tests/unit....tsx (10.718 s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  VietQR Payment Polling
+    ├ù Frontend polls payment status every 2 seconds when QR modal is open (10009 ms)
+    ├ù Polling stops and redirects after payment success (14 ms)
+
+  ΓùÅ VietQR Payment Polling ΓÇ║ Frontend polls payment status every 2 seconds when QR modal is open
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 31 |[39m     })[33m;[39m
+     [90m 32 |[39m
+    [31m[1m>[22m[39m[90m 33 |[39m     test([32m'Frontend polls payment status every 2 seconds when QR modal is open'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m 34 |[39m         [90m// 1. Mock Order Fetch[39m
+     [90m 35 |[39m         (api[33m.[39m[36mget[39m [36mas[39m jest[33m.[39m[33mMock[39m)[33m.[39mmockImplementation((url) [33m=>[39m {
+     [90m 36 |[39m             [36mif[39m (url [33m===[39m [32m'/orders/123'[39m) [36mreturn[39m [33mPromise[39m[33m.[39mresolve({ data[33m:[39m { id[33m:[39m [35m123[39m[33m,[39m 
+total_amount[33m:[39m [35m50000[39m } })[33m;[39m[0m
+
+      at test (tests/unit/payment-polling.test.tsx:33:5)
+      at Object.describe (tests/unit/payment-polling.test.tsx:22:1)
+
+  ΓùÅ VietQR Payment Polling ΓÇ║ Polling stops and redirects after payment success
+
+    TestingLibraryElementError: Found multiple elements with the text: VietQR
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    [36m<button>[39m
+      [0mVietQR[0m
+    [36m</button>[39m
+
+    Ignored nodes: comments, script, style
+    [36m<button>[39m
+      [0mVietQR[0m
+    [36m</button>[39m
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-screen bg-dark-bg flex flex-col"[39m
+        [36m>[39m
+          [36m<header[39m
+            [33mclass[39m=[32m"sticky top-0 z-40 bg-dark-bg/95 backdrop-blur-md border-b border-dark-border"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"px-4 py-4 flex items-center gap-4"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"w-10 h-10 rounded-full bg-dark-card flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33mclass[39m=[32m"lucide lucide-arrow-left "[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"20"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"20"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m12 19-7-7 7-7"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19 12H5"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</button>[39m
+              [36m<div>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-lg font-bold text-text-primary"[39m
+                [36m>[39m
+                  [0mThanh to├ín[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"text-sm text-text-muted"[39m
+                [36m>[39m
+                  [0mChß╗ìn ph╞░╞íng thß╗⌐c thanh to├ín[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</header>[39m
+          [36m<main[39m
+            [33mclass[39m=[32m"flex-1 p-4 space-y-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-dark-card border border-dark-border rounded-2xl p-4"[39m
+              [33mstyle[39m=[32m"opacity: 0; transform: translateY(-10px);"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"w-full"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex items-center justify-between mb-2"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"text-sm text-text-secondary"[39m
+                  [36m>[39m
+                    [0mThß╗¥i gian thanh to├ín[0m
+                  [36m</span>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"font-mono font-bold text-text-primary"[39m
+                  [36m>[39m
+                    [0m15:00[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"h-2 bg-dark-card rounded-full overflow-hidden"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"h-full rounded-full transition-all duration-1000 bg-gradient-to-r from-primary-500 to-secondary-500"[39m
+                    [33mstyle[39m=[32m"width: 100%;"[39m
+                  [36m/>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-dark-card border border-dark-border rounded-2xl p-4"[39m
+              [33mstyle[39m=[32m"opacity: 0; transform: translateY(10px);"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center justify-between"[39m
+              [36m>[39m
+                [36m<div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-text-muted text-sm"[39m
+                  [36m>[39m
+                    [0mSß╗æ tiß╗ün thanh to├ín[0m
+                  [36m</p>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"text-2xl font-bold text-primary-400"[39m
+                  [36m>[39m
+                    [0m50.000┬áΓé½[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-credit-card text-primary-400"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<rect[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mrx[39m=[32m"2"[39m
+                      [33mwidth[39m=[32m"20"[39m
+                      [33mx[39m=[32m"2"[39m
+                      [33my[39m=[32m"5"[39m
+                    [36m/>[39m
+                    [36m<line[39m
+                      [33mx1[39m=[32m"2"[39m
+                      [33mx2[39m=[32m"22"[39m
+                      [33my1[39m=[32m"10"[39m
+                      [33my2[39m=[32m"10"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"space-y-3"[39m
+              [33mstyle[39m=[32m"opacity: 0; transform: translateY(20px);"[39m
+            [36m>[39m
+              [36m<h2[39m
+                [33mclass[39m=[32m"text-sm font-medium text-text-secondary mb-3"[39m
+              [36m>[39m
+                [0mPh╞░╞íng thß╗⌐c thanh to├ín[0m
+              [36m</h2>[39m
+              [36m<button>[39m
+                [0mVietQR[0m
+              [36m</button>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"relative py-4"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute inset-0 flex items-center"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"w-full border-t border-dark-border"[39m
+                  [36m/>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"relative flex justify-center"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"px-3 bg-dark-bg text-text-muted text-sm"[39m
+                  [36m>[39m
+                    [0mhoß║╖c[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<button>[39m
+                [0mVietQR[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</main>[39m
+          [36m<footer[39m
+            [33mclass[39m=[32m"p-4 text-center text-text-muted text-xs"[39m
+          [36m>[39m
+            [36m<p>[39m
+              [0mThanh to├ín an to├án v├á bß║úo mß║¡t ΓÇó 0% ph├¡ giao dß╗ïch[0m
+            [36m</p>[39m
+          [36m</footer>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m  98 |[39m
+     [90m  99 |[39m         [36mawait[39m act([36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 100 |[39m             screen[33m.[39mgetByText([32m'VietQR'[39m)[33m.[39mclick()[33m;[39m
+     [90m     |[39m                    [31m[1m^[22m[39m
+     [90m 101 |[39m         })[33m;[39m
+     [90m 102 |[39m
+     [90m 103 |[39m         [90m// Verify Success Message showed up (wrapped in Vietnamese text)[39m[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at getByText (tests/unit/payment-polling.test.tsx:100:20)
+      at node_modules/@testing-library/react/dist/act-compat.js:48:24
+      at act (node_modules/react/cjs/react.development.js:2512:16)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at Object.<anonymous> (tests/unit/payment-polling.test.tsx:99:18)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 2 total
+Snapshots:   0 total
+Time:        11.146 s
+Ran all test suites matching /tests\\unit\\payment-polling.test.tsx/i.

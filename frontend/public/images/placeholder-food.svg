@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#1F2A48"/>
+  <circle cx="200" cy="120" r="50" fill="#2D3A5C"/>
+  <path d="M180 110 L200 90 L220 110 L220 130 L180 130 Z" fill="#4A5568"/>
+  <rect x="185" y="130" width="30" height="20" fill="#4A5568"/>
+  <text x="200" y="200" font-family="Arial, sans-serif" font-size="16" fill="#6B7280" text-anchor="middle">No Image</text>
+  <text x="200" y="225" font-family="Arial, sans-serif" font-size="12" fill="#4B5563" text-anchor="middle">Không có hình ảnh</text>
+</svg>

@@ -15,6 +15,7 @@ class Food(Base):
     category = Column(String(50), index=True)
     is_available = Column(Boolean, default=True)
     description = Column(String(500), nullable=True)
+    image_url = Column(String(500), nullable=True)  # URL to food image
 
     # TC-ORDER-06: The "Last Plate" Problem fix
     stock_quantity = Column(Integer, default=0, nullable=True)  # Nullable means infinite/untracked

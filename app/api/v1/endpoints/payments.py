@@ -1,16 +1,20 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db, require_role
+from app.core.websocket import manager
 from app.models.payment import Payment
 from app.models.user import User, UserRole
 from app.schemas.payment import (
+    CassoWebhookPayload,
     PaymentCreate,
+    PaymentProvider,
     PaymentResponse,
     PaymentStatus,
     PaymentStatusResponse,
+    VietQRResponse,
     WebhookPayload,
 )
 from app.services.payment_service import PaymentService
@@ -18,18 +22,56 @@ from app.services.payment_service import PaymentService
 router = APIRouter()
 
 
-@router.post("/initiate", response_model=PaymentResponse, status_code=201)
+@router.post("/initiate", response_model=PaymentResponse | VietQRResponse, status_code=201)
 def initiate_payment(
     payment_in: PaymentCreate,
+    background_tasks: BackgroundTasks,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     """
     Initiate a new payment for an order.
+    For VietQR: Returns QR code URL with bank details.
     Payment expires after 15 minutes if not completed.
     """
     payment_service = PaymentService(db)
-    return payment_service.initiate_payment(payment_in)
+    payment = payment_service.initiate_payment(payment_in)
+
+    # For Cash, notify admin/kitchen immediately
+    if payment_in.provider == PaymentProvider.CASH:
+        # Get table number if available
+        table_number = payment.order.table.table_number if payment.order and payment.order.table else "Unknown"
+        
+        # Broadcast notification via WebSocket
+        message = {
+            "type": "cash_payment_request",
+            "table_number": table_number,
+            "message": f"Bàn {table_number} thanh toán tiền mặt"
+        }
+        background_tasks.add_task(manager.broadcast, message, channel="kitchen")
+
+    # For VietQR, enrich response with QR code details
+    if payment_in.provider == PaymentProvider.VIETQR:
+        vietqr_data = payment_service.generate_vietqr_url(
+            order_id=payment.order_id,
+            amount=payment.amount
+        )
+        return VietQRResponse(
+            id=payment.id,
+            order_id=payment.order_id,
+            amount=payment.amount,
+            currency=payment.currency,
+            status=PaymentStatus(payment.status),
+            provider=payment.provider,
+            qr_url=vietqr_data["qr_url"],
+            bank_id=vietqr_data["bank_id"],
+            account_no=vietqr_data["account_no"],
+            account_name=vietqr_data["account_name"],
+            transfer_content=vietqr_data["transfer_content"],
+            expires_at=payment.expires_at,
+        )
+
+    return payment
 
 
 @router.post("/webhook", response_model=PaymentResponse)
@@ -48,6 +90,35 @@ def payment_webhook(
 
     payment_service = PaymentService(db)
     return payment_service.process_webhook(payload)
+
+
+@router.post("/webhook/casso", response_model=dict)
+async def casso_webhook(
+    payload: CassoWebhookPayload,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """
+    Webhook endpoint for Casso.vn bank transfer notifications.
+    
+    When a customer transfers money via VietQR, Casso detects the transfer
+    and sends a POST request to this endpoint with transaction details.
+    
+    The order ID is extracted from the transfer description (e.g., "THANH TOAN DON OC_123").
+    
+    IDEMPOTENT: Safe to call multiple times with same transaction ID.
+    Successful payments trigger WebSocket notification to kitchen.
+    """
+    # TODO: Verify Casso webhook signature in production
+    # Header: X-Casso-Signature with HMAC-SHA256
+
+    payment_service = PaymentService(db)
+    updated_payments = await payment_service.process_casso_webhook(payload)
+
+    return {
+        "status": "success",
+        "processed_count": len(updated_payments),
+        "payment_ids": [p.id for p in updated_payments],
+    }
 
 
 @router.get("/{payment_id}", response_model=PaymentStatusResponse)

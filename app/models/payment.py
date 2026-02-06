@@ -19,11 +19,9 @@ class PaymentStatus(str, enum.Enum):
 
 class PaymentProvider(str, enum.Enum):
     """Supported payment providers."""
-    MOMO = "momo"
-    VNPAY = "vnpay"
-    ZALOPAY = "zalopay"
+    VIETQR = "vietqr"  # Zero-fee bank transfer via QR code
     CASH = "cash"
-    BANK_TRANSFER = "bank_transfer"
+    BANK_TRANSFER = "bank_transfer"  # Legacy/manual bank transfer
 
 
 class Payment(Base):

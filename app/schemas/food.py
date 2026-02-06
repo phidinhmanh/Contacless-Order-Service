@@ -23,6 +23,8 @@ class FoodUpdate(BaseModel):
     category: str | None = None
     is_available: bool | None = None
     stock_quantity: int | None = None
+    description: str | None = None
+    image_url: str | None = None
 
 
 class FoodStockUpdate(BaseModel):
@@ -35,6 +37,9 @@ class FoodResponse(FoodBase):
     """Schema for food response."""
     id: int
     is_available: bool
+    description: str | None = None
+    image_url: str | None = None
     created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+

@@ -94,7 +94,7 @@ class TestInventoryAlerts:
         # Create orders in last 24h to generate velocity
         # Velocity = 24 items / 24 hours = 1.0 item/hr
         # 5 stock / 1.0 velocity = 5 hours left (< 6h threshold for HIGH)
-        for _ in range(24):
+        for _ in range(200):
             order = Order(table_id=1, status=OrderStatus.PAID, created_at=datetime.now(UTC) - timedelta(hours=2))
             db_session.add(order)
             db_session.flush()

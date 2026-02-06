@@ -43,9 +43,8 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=OrderResponse, status_code=201)
-def create_order(
+async def create_order(
     order_in: OrderCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     table_id_from_token: int | None = Depends(get_current_table_id),
@@ -64,7 +63,22 @@ def create_order(
 
     order_service = OrderService(db)
     order = order_service.create_order(order_in)
-    background_tasks.add_task(broadcast_new_order, order)
+    await broadcast_new_order(order)
+    return order
+
+
+@router.post("/{order_id}/advance", response_model=OrderResponse)
+async def advance_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Advance an order to the next status.
+    PENDING -> CONFIRMED -> PREPARING -> READY -> COMPLETED
+    """
+    order_service = OrderService(db)
+    order = order_service.advance_order_status(order_id)
+    await broadcast_order_update(order)
     return order
 
 
@@ -82,9 +96,8 @@ def update_order(
 
 
 @router.post("/{order_id}/cancel", response_model=OrderResponse)
-def cancel_order(
+async def cancel_order(
     order_id: int,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -94,7 +107,7 @@ def cancel_order(
     """
     order_service = OrderService(db)
     order = order_service.cancel_order(order_id=order_id, user_id=current_user.id)
-    background_tasks.add_task(broadcast_order_update, order, "order_cancelled")
+    await broadcast_order_update(order, "order_cancelled")
     return order
 
 

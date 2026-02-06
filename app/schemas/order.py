@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 
 class OrderItemBase(BaseModel):
@@ -17,13 +17,21 @@ class OrderItemCreate(OrderItemBase):
 class OrderItemResponse(OrderItemBase):
     """Schema for order item response."""
     id: int
+    unit_price: float
+    food_name: str | None = None  # Populated via relationship
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def subtotal(self) -> float:
+        """Calculate subtotal for this item."""
+        return self.unit_price * self.quantity
 
 
 class OrderBase(BaseModel):
     """Base order schema with common fields."""
-    user_id: int
+    user_id: int | None = None  # Optional for guest users
     table_id: int
     special_instructions: str | None = None
 
@@ -51,3 +59,20 @@ class OrderResponse(OrderBase):
     items: list[OrderItemResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def total_amount(self) -> float:
+        """Alias for total_price for frontend compatibility."""
+        return self.total_price
+
+    @computed_field
+    @property
+    def payment_status(self) -> str:
+        """Helper to distinguish between pending-unpaid and other states."""
+        if self.status in ["paid", "completed", "ready", "preparing", "confirmed"]:
+            return "paid"
+        if self.status == "payment_failed":
+            return "failed"
+        return "unpaid"
+

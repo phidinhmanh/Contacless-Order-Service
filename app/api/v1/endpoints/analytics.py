@@ -114,6 +114,21 @@ def get_table_revenue(
     return analytics.get_table_revenue(days=days)
 
 
+@router.get("/popular-items")
+def get_popular_items(
+    db: Annotated[Session, Depends(get_db)],
+    _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
+    days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
+    limit: int = Query(10, ge=1, le=100, description="Number of items to return"),
+):
+    """
+    Get top selling items.
+    Requires ADMIN or MANAGER role.
+    """
+    analytics = AnalyticsService(db)
+    return analytics.get_popular_items(days=days, limit=limit)
+
+
 @router.get("/export")
 def export_to_excel(
     db: Annotated[Session, Depends(get_db)],

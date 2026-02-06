@@ -1,42 +1,43 @@
-# Multi-stage build for optimized production image
-FROM python:3.13-slim as builder
+# =====================
+# Builder stage
+# =====================
+FROM python:3.13-slim AS builder
 
 # Install UV
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Set working directory
 WORKDIR /app
 
-# Copy dependency files
+# Copy dependency metadata
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies
+# Install prod dependencies
 RUN uv sync --frozen --no-dev
 
-# Production stage
+# =====================
+# Runtime stage
+# =====================
 FROM python:3.13-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy UV and virtual environment from builder
-COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
+# Copy venv + uv
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
 
 # Copy application code
 COPY . .
 
-# Set environment variables
+# Environment
 ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+  PYTHONUNBUFFERED=1 \
+  PYTHONDONTWRITEBYTECODE=1
 
-# Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+# Healthcheck (NO external deps)
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

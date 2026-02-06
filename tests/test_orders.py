@@ -163,3 +163,39 @@ class TestOrderProcess:
         response = client.post(f"/api/v1/orders/{old_order.id}/cancel", headers=auth_headers)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "expired" in response.json()["detail"].lower()
+    def test_tc_order_11_status_progression(self, client, auth_headers, sample_table, sample_food):
+        """Test the full status transition chain: PENDING -> CONFIRMED -> PREPARING -> READY -> COMPLETED"""
+        # 1. Create Order (starts as PENDING)
+        order_data = {
+            "table_id": sample_table.id,
+            "items": [{"food_id": sample_food.id, "quantity": 1}]
+        }
+        response = client.post("/api/v1/orders/", json=order_data, headers=auth_headers)
+        assert response.status_code == status.HTTP_201_CREATED
+        order_id = response.json()["id"]
+        assert response.json()["status"] == "pending"
+
+        # 2. Advance to CONFIRMED
+        response = client.post(f"/api/v1/orders/{order_id}/advance", headers=auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "confirmed"
+
+        # 3. Advance to PREPARING
+        response = client.post(f"/api/v1/orders/{order_id}/advance", headers=auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "preparing"
+
+        # 4. Advance to READY
+        response = client.post(f"/api/v1/orders/{order_id}/advance", headers=auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "ready"
+
+        # 5. Advance to COMPLETED
+        response = client.post(f"/api/v1/orders/{order_id}/advance", headers=auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["status"] == "completed"
+
+        # 6. Try to advance beyond COMPLETED (should fail)
+        response = client.post(f"/api/v1/orders/{order_id}/advance", headers=auth_headers)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Cannot advance" in response.json()["detail"]

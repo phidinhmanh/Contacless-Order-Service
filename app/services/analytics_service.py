@@ -6,12 +6,18 @@ Provides revenue summaries, peak hour analysis, and customer insights.
 from datetime import UTC, datetime, timedelta
 from typing import Any, Dict, List
 
+import pytz
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models.order import Order
+from app.models.food import Food
+from app.models.order import Order, OrderItem, OrderStatus
 from app.models.payment import Payment, PaymentStatus
 from app.models.user import User
+from app.models.table_session import TableSession
+
+# Vietnam timezone for local time conversions
+VIETNAM_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
 
 
 class AnalyticsService:
@@ -28,29 +34,23 @@ class AnalyticsService:
         """
         Get revenue summary for a date range.
         Defaults to last 24 hours if no dates provided.
+        Uses PAID orders (not COMPLETED) for accurate revenue tracking.
         """
         if not start_date:
             start_date = datetime.now(UTC) - timedelta(hours=24)
         if not end_date:
             end_date = datetime.now(UTC)
 
-        # Get completed payments in date range
-        payments = self.db.query(Payment).filter(
-            Payment.status == PaymentStatus.COMPLETED.value,
-            Payment.completed_at >= start_date,
-            Payment.completed_at <= end_date,
-        ).all()
-
-        # Get orders in date range
+        # Get PAID and COMPLETED orders in date range for revenue calculation
         orders = self.db.query(Order).filter(
             Order.created_at >= start_date,
             Order.created_at <= end_date,
+            Order.status.in_([OrderStatus.CONFIRMED.value, OrderStatus.COMPLETED.value]),
         ).all()
 
-        total_revenue = sum(p.amount for p in payments)
+        total_revenue = sum(o.total_price for o in orders if o.total_price)
         order_count = len(orders)
-        payment_count = len(payments)
-        avg_order_value = total_revenue / payment_count if payment_count > 0 else 0
+        avg_order_value = total_revenue / order_count if order_count > 0 else 0
 
         return {
             "period": {
@@ -59,7 +59,6 @@ class AnalyticsService:
             },
             "total_revenue": round(total_revenue, 2),
             "order_count": order_count,
-            "completed_payments": payment_count,
             "average_order_value": round(avg_order_value, 2),
             "currency": "VND",
         }
@@ -72,6 +71,7 @@ class AnalyticsService:
         """
         Analyze peak hours based on order volume.
         Groups by 30-minute intervals by default.
+        Converts to Vietnam timezone for accurate local peak hours.
         """
         start_date = datetime.now(UTC) - timedelta(days=days)
 
@@ -79,12 +79,15 @@ class AnalyticsService:
             Order.created_at >= start_date,
         ).all()
 
-        # Group by hour and half-hour
+        # Group by hour and half-hour (in Vietnam timezone)
         time_slots: Dict[str, int] = {}
         for order in orders:
             if order.created_at:
-                hour = order.created_at.hour
-                minute_slot = 0 if order.created_at.minute < 30 else 30
+                # Convert UTC to Vietnam time for accurate local peak hours
+                utc_time = order.created_at.replace(tzinfo=pytz.UTC)
+                local_time = utc_time.astimezone(VIETNAM_TZ)
+                hour = local_time.hour
+                minute_slot = 0 if local_time.minute < 30 else 30
                 slot_key = f"{hour:02d}:{minute_slot:02d}"
                 time_slots[slot_key] = time_slots.get(slot_key, 0) + 1
 
@@ -99,18 +102,18 @@ class AnalyticsService:
 
     def get_customer_segments(self) -> Dict[str, Any]:
         """
-        Analyze new vs returning customers.
-        A returning customer has more than 1 order.
+        Analyze new vs returning customers based on visits (TableSessions).
+        A returning customer has visited in more than 1 session.
         """
-        # Count orders per user
-        user_order_counts = self.db.query(
+        # Count sessions per user (Inner join ensures we only count users who started a session)
+        user_session_counts = self.db.query(
             User.id,
-            func.count(Order.id).label("order_count")
-        ).outerjoin(Order).group_by(User.id).all()
+            func.count(TableSession.id).label("session_count")
+        ).join(TableSession, User.id == TableSession.lead_user_id).group_by(User.id).all()
 
-        new_customers = sum(1 for _, count in user_order_counts if count == 1)
-        returning_customers = sum(1 for _, count in user_order_counts if count > 1)
-        total_customers = len(user_order_counts)
+        new_customers = sum(1 for _, count in user_session_counts if count == 1)
+        returning_customers = sum(1 for _, count in user_session_counts if count > 1)
+        total_customers = len(user_session_counts)
 
         return {
             "total_customers": total_customers,
@@ -125,17 +128,18 @@ class AnalyticsService:
         """Get daily revenue for charting."""
         start_date = datetime.now(UTC) - timedelta(days=days)
 
-        payments = self.db.query(Payment).filter(
-            Payment.status == PaymentStatus.COMPLETED.value,
-            Payment.completed_at >= start_date,
+        orders = self.db.query(Order).filter(
+            Order.status.in_([OrderStatus.PAID.value, OrderStatus.COMPLETED.value]),
+            Order.created_at >= start_date,
         ).all()
 
-        # Group by date
+        # Group by date (in Vietnam timezone for consistency)
         daily_revenue: Dict[str, float] = {}
-        for payment in payments:
-            if payment.completed_at:
-                date_key = payment.completed_at.strftime("%Y-%m-%d")
-                daily_revenue[date_key] = daily_revenue.get(date_key, 0) + payment.amount
+        for order in orders:
+            utc_time = order.created_at.replace(tzinfo=pytz.UTC)
+            local_time = utc_time.astimezone(VIETNAM_TZ)
+            date_key = local_time.strftime("%Y-%m-%d")
+            daily_revenue[date_key] = daily_revenue.get(date_key, 0) + (order.total_price or 0)
 
         return [
             {"date": k, "revenue": round(v, 2)}
@@ -145,77 +149,147 @@ class AnalyticsService:
     def get_retention_data(self) -> Dict[str, Any]:
         """
         Calculate customer retention over 14 and 30 day windows.
-        #1 metric for Sơn's growth logic.
+        
+        CORRECT LOGIC:
+        1. Find users who had at least 1 order BEFORE the window (eligible to return)
+        2. Of those, count how many ordered WITHIN the window (returning)
+        3. Retention Rate = returning / eligible * 100
         """
         now = datetime.now(UTC)
         windows = [14, 30]
         retention = {}
 
         for days in windows:
-            start_date = now - timedelta(days=days)
-            # Users who ordered in the window
-            active_users = self.db.query(Order.user_id).filter(
-                Order.created_at >= start_date
+            window_start = now - timedelta(days=days)
+            
+            # Step 1: Users who had at least 1 order BEFORE the window (eligible to return)
+            historical_user_ids = self.db.query(Order.user_id).filter(
+                Order.created_at < window_start,
+                Order.user_id.isnot(None)
             ).distinct().all()
-
-            # Users who had at least 1 order BEFORE the window
+            
+            eligible_user_ids = [u[0] for u in historical_user_ids]
+            total_eligible = len(eligible_user_ids)
+            
+            if total_eligible == 0:
+                retention[f"rate_{days}d"] = 0.0
+                retention[f"returning_users_{days}d"] = 0
+                retention[f"eligible_users_{days}d"] = 0
+                continue
+            
+            # Step 2: Of those eligible, how many ordered WITHIN the window?
             returning_users = self.db.query(Order.user_id).filter(
-                Order.created_at < start_date,
-                Order.user_id.in_([u[0] for u in active_users])
+                Order.created_at >= window_start,
+                Order.user_id.in_(eligible_user_ids)
             ).distinct().count()
 
-            total_historical = self.db.query(User).filter(
-                User.created_at < start_date
-            ).count()
-
             retention[f"rate_{days}d"] = round(
-                (returning_users / total_historical * 100) if total_historical > 0 else 0, 2
+                (returning_users / total_eligible * 100), 2
             )
             retention[f"returning_users_{days}d"] = returning_users
+            retention[f"eligible_users_{days}d"] = total_eligible
 
         return retention
 
     def get_inventory_alerts(self, threshold_hours: int = 24) -> List[Dict[str, Any]]:
         """
         Predictive Inventory Alerts.
-        Compares current stock vs order velocity in the last 24h.
+        Uses 7-day average velocity for more stable predictions.
         """
-        from app.models.food import Food
-        from app.models.order import OrderItem
-
         now = datetime.now(UTC)
-        last_24h = now - timedelta(hours=24)
+        last_7d = now - timedelta(days=7)
 
-        # Calculate velocity (items per hour)
+        # Calculate velocity (items per hour) - 7-day average for stability
         velocity_subquery = (
             self.db.query(
                 OrderItem.food_id,
-                (func.sum(OrderItem.quantity) / 24.0).label("velocity")
+                (func.sum(OrderItem.quantity) / (7.0 * 24)).label("velocity")
             )
             .join(Order, Order.id == OrderItem.order_id)
-            .filter(Order.created_at >= last_24h)
+            .filter(Order.created_at >= last_7d)
             .group_by(OrderItem.food_id)
             .subquery()
         )
 
-        # Get foods with low stock relative to velocity
+        # Get foods with stock tracking enabled
         foods = self.db.query(Food, velocity_subquery.c.velocity).outerjoin(
             velocity_subquery, Food.id == velocity_subquery.c.food_id
-        ).filter(Food.stock_quantity != None).all()
+        ).filter(Food.stock_quantity.isnot(None)).all()
 
         alerts = []
         for food, velocity in foods:
-            velocity = velocity or 0.05  # Assume low velocity if no orders
-            hours_left = food.stock_quantity / velocity if velocity > 0 else 999
+            # Handle None stock safely
+            stock = food.stock_quantity or 0
+            velocity = velocity or 0.05  # Assume low velocity if no recent orders
+            hours_left = stock / velocity if velocity > 0 else 999
 
-            if hours_left < threshold_hours or food.stock_quantity < 10:
+            if hours_left < threshold_hours or stock < 10:
                 alerts.append({
                     "food_id": food.id,
                     "food_name": food.name,
-                    "current_stock": food.stock_quantity,
-                    "velocity_per_hour": round(velocity, 2),
+                    "current_stock": stock,
+                    "velocity_per_hour": round(velocity, 3),
                     "estimated_hours_remaining": round(hours_left, 1) if hours_left < 999 else "Stable",
-                    "priority": "HIGH" if hours_left < 6 else "MEDIUM"
+                    "priority": "HIGH" if hours_left < 6 else ("MEDIUM" if hours_left < 24 else "LOW")
                 })
 
-        return sorted(alerts, key=lambda x: x["estimated_hours_remaining"] if isinstance(x["estimated_hours_remaining"], (int, float)) else 999)
+        return sorted(
+            alerts, 
+            key=lambda x: x["estimated_hours_remaining"] if isinstance(x["estimated_hours_remaining"], (int, float)) else 999
+        )
+
+    def get_table_revenue(self, days: int = 30) -> List[Dict[str, Any]]:
+        """
+        Analyze revenue and popularity by table.
+        Identify the most profitable locations in the restaurant.
+        """
+        start_date = datetime.now(UTC) - timedelta(days=days)
+
+        # Get orders with payments grouped by table
+        results = self.db.query(
+            Order.table_id,
+            func.sum(Order.total_price).label("total_revenue"),
+            func.count(Order.id).label("order_count")
+        ).filter(
+            Order.created_at >= start_date,
+            Order.status.in_([OrderStatus.PAID.value, OrderStatus.COMPLETED.value]),
+            Order.table_id.isnot(None)
+        ).group_by(Order.table_id).all()
+
+        table_data = []
+        for table_id, total_revenue, order_count in results:
+            avg_order = total_revenue / order_count if order_count > 0 else 0
+            table_data.append({
+                "table_id": table_id,
+                "total_revenue": round(total_revenue or 0, 2),
+                "order_count": order_count,
+                "avg_order_value": round(avg_order, 2)
+            })
+
+        return sorted(table_data, key=lambda x: x["total_revenue"], reverse=True)
+
+    def get_popular_items(self, days: int = 30, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get most popular food items by quantity sold.
+        """
+        start_date = datetime.now(UTC) - timedelta(days=days)
+
+        # Aggregate OrderItems for PAID/COMPLETED orders
+        # Aggregate OrderItems for PAID/COMPLETED orders
+        results = self.db.query(
+            Food.name,
+            func.sum(OrderItem.quantity).label("total_quantity"),
+            func.sum(OrderItem.unit_price * OrderItem.quantity).label("total_revenue")
+        ).join(Order).join(Food, OrderItem.food_id == Food.id).filter(
+            Order.created_at >= start_date,
+            Order.status.in_([OrderStatus.PAID.value, OrderStatus.COMPLETED.value])
+        ).group_by(Food.name).order_by(func.sum(OrderItem.quantity).desc()).limit(limit).all()
+
+        return [
+            {
+                "food_name": name,
+                "quantity": int(qty),
+                "revenue": float(revenue)
+            }
+            for name, qty, revenue in results
+        ]

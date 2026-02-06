@@ -54,11 +54,11 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
 
 
-class UserResponse(BaseModel):
+class UserResponse(BaseModel):  
     """Schema for user response (never includes password)."""
     id: int
-    phone_number: str
-    full_name: str
+    phone_number: str | None
+    full_name: str | None
     gender: str | None
     role: str
     is_active: bool

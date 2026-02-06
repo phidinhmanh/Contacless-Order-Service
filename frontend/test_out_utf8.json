@@ -1,0 +1,264 @@
+﻿node.exe : FAIL 
+unit tests/unit/pay
+ment-polling.test.t
+sx (5.943 s)
+At line:1 char:1
++ & "C:\Program Fil
+es\nodejs/node.exe"
+ "C:\Users\ASUS\App
+Data\Roaming\n ...
++ ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+    + CategoryInfo 
+             : No  
+  tSpecified: (F   
+ AIL unit tests    
+...t.tsx (5.94    
+3 s):String) [    
+], RemoteExcep    
+tion
+    + FullyQualifi 
+   edErrorId : Na  
+  tiveCommandErr   
+ or
+ 
+  VietQR Payment 
+Polling
+    ├ù Frontend 
+polls payment 
+status every 3 
+seconds (5005 ms)
+    ├ù Redirection 
+after success and 
+polling stops (42 
+ms)
+
+  ΓùÅ VietQR 
+Payment Polling 
+ΓÇ║ Frontend polls 
+payment status 
+every 3 seconds
+
+    thrown: 
+"Exceeded timeout 
+of 5000 ms for a 
+test.
+    Add a timeout 
+value to this test 
+to increase the 
+timeout, if this 
+is a long-running 
+test. See https://j
+estjs.io/docs/api#t
+estname-fn-timeout.
+"
+
+    [0m [90m 47 
+|[39m         jest
+[33m.[39museRealT
+imers()[33m;[39m
+     [90m 48 
+|[39m     
+})[33m;[39m
+    [31m[1m>[22m
+[39m[90m 49 
+|[39m     test([3
+2m'Frontend polls 
+payment status 
+every 3 seconds'[3
+9m[33m,[39m 
+[36masync[39m () 
+[33m=>[39m {
+     [90m    
+|[39m     [31m[1
+m^[22m[39m
+     [90m 50 
+|[39m         
+[36mlet[39m 
+callCount 
+[33m=[39m [35m0
+[39m[33m;[39m
+     [90m 51 
+|[39m         (api
+[33m.[39m[36mget
+[39m [36mas[39m 
+jest[33m.[39m[33
+mMock[39m)[33m.[
+39mmockImplementati
+on((url) 
+[33m=>[39m {
+     [90m 52 
+|[39m             
+[36mif[39m (url[
+33m.[39mincludes(
+[32m'/orders/123'[
+39m)) 
+[36mreturn[39m [
+33mPromise[39m[33
+m.[39mresolve({ 
+data[33m:[39m { 
+id[33m:[39m [35m
+123[39m[33m,[39m
+ total_amount[33m:
+[39m 
+[35m50000[39m } 
+})[33m;[39m[0m
+
+      at tests/unit
+/payment-polling.te
+st.tsx:49:5
+      at 
+Object.<anonymous> 
+(tests/unit/payment
+-polling.test.tsx:4
+0:1)
+
+  ΓùÅ VietQR 
+Payment Polling 
+ΓÇ║ Redirection 
+after success and 
+polling stops
+
+    Unable to find 
+an element with 
+the text: Qu├⌐t 
+m├ú QR. This could 
+be because the 
+text is broken up 
+by multiple 
+elements. In this 
+case, you can 
+provide a function 
+for your text 
+matcher to make 
+your matcher more 
+flexible.
+
+    Ignored nodes: 
+comments, script, 
+style
+    
+[36m<body>[39m
+      
+[36m<div>[39m
+        
+[36m<div[39m
+          [33mclas
+s[39m=[32m"min-h-
+screen flex 
+items-center justif
+y-center"[39m
+        [36m>[39m
+          
+[36m<div[39m
+            [33mcl
+ass[39m=[32m"flex
+ flex-col 
+items-center 
+justify-center 
+py-12 gap-4"[39m
+          
+[36m>[39m
+            
+[36m<div[39m
+              [33m
+class[39m=[32m"an
+imate-spin 
+rounded-full 
+border-2 
+border-transparent 
+border-t-primary-50
+0 border-r-primary-
+500 w-8 h-8"[39m
+            
+[36m/>[39m
+            
+[36m<p[39m
+              [33m
+class[39m=[32m"te
+xt-text-secondary"
+[39m
+            
+[36m>[39m
+              
+[0m─Éang 
+tß║úi...[0m
+            
+[36m</p>[39m
+          
+[36m</div>[39m
+        
+[36m</div>[39m
+      
+[36m</div>[39m
+    
+[36m</body>[39m
+
+    [0m [90m 104 
+|[39m         
+})[33m;[39m
+     [90m 105 
+|[39m
+    [31m[1m>[22m
+[39m[90m 106 
+|[39m         
+[36mconst[39m 
+payBtn [33m=[39m 
+[36mawait[39m scr
+een[33m.[39mfindB
+yText([32m'Qu├⌐t 
+m├ú QR'[39m[33m,
+[39m {}[33m,[39m 
+{ 
+timeout[33m:[39m 
+[35m3000[39m 
+})[33m;[39m
+     [90m     
+|[39m             
+                   
+     [31m[1m^[22
+m[39m
+     [90m 107 
+|[39m         
+[36mawait[39m act
+([36masync[39m 
+() [33m=>[39m {
+     [90m 108 
+|[39m             
+fireEvent[33m.[39
+mclick(payBtn)[33m
+;[39m
+     [90m 109 
+|[39m         
+})[33m;[39m[0m
+
+      at 
+waitForWrapper (nod
+e_modules/@testing-
+library/dom/dist/wa
+it-for.js:163:27)
+      at node_modul
+es/@testing-library
+/dom/dist/query-hel
+pers.js:86:33
+      at 
+Object.<anonymous> 
+(tests/unit/payment
+-polling.test.tsx:1
+06:37)
+
+Test Suites: 1 
+failed, 1 total
+Tests:       2 
+failed, 2 total
+Snapshots:   0 
+total
+Time:        6.454 
+s
+Ran all test 
+suites matching /te
+sts\\unit\\payment-
+polling.test.tsx/i.
+{"numFailedTestSuites":1,"numFailedTests":2,"numPassedTestSuites":0,"numPassedTests":0,"numPendingTestSuites":0,"numPendingTests":0,"numRuntimeErrorTestSuites":0,"numTodoTests":0,"numTotalTestSuites":1,"numTotalTests":2,"openHandles":[],"snapshot":{"added":0,"didUpdate":false,"failure":false,"filesAdded":0,"filesRemoved":0,"filesRemovedList":[],"filesUnmatched":0,"filesUpdated":0,"matched":0,"total":0,"unchecked":0,"uncheckedKeysByFile":[],"unmatched":0,"updated":0},"startTime":1770211889018,"success":false,"testResults":[{"assertionResults":[{"ancestorTitles":["VietQR Payment Polling"],"duration":5005,"failureDetails":[{"message":"thrown: \"Exceeded timeout of 5000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\""}],"failureMessages":["Error: thrown: \"Exceeded timeout of 5000 ms for a test.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at D:\\Work\\project UET\\Contacless Order Service\\frontend\\tests\\unit\\payment-polling.test.tsx:49:5\n    at _dispatchDescribe (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-circus\\build\\index.js:91:26)\n    at describe (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-circus\\build\\index.js:55:5)\n    at Object.<anonymous> (D:\\Work\\project UET\\Contacless Order Service\\frontend\\tests\\unit\\payment-polling.test.tsx:40:1)\n    at Runtime._execModule (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-runtime\\build\\index.js:1439:24)\n    at Runtime._loadModule (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-runtime\\build\\index.js:1022:12)\n    at Runtime.requireModule (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-runtime\\build\\index.js:882:12)\n    at jestAdapter (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-circus\\build\\legacy-code-todo-rewrite\\jestAdapter.js:77:13)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at runTestInternal (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-runner\\build\\runTest.js:367:16)\n    at runTest (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\jest-runner\\build\\runTest.js:444:34)"],"fullName":"VietQR Payment Polling Frontend polls payment status every 3 seconds","invocations":1,"location":null,"numPassingAsserts":0,"retryReasons":[],"status":"failed","title":"Frontend polls payment status every 3 seconds"},{"ancestorTitles":["VietQR Payment Polling"],"duration":42,"failureDetails":[{"name":"TestingLibraryElementError"}],"failureMessages":["Error: Unable to find an element with the text: Qu├⌐t m├ú QR. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.\n\nIgnored nodes: comments, script, style\n\u001b[36m<body>\u001b[39m\n  \u001b[36m<div>\u001b[39m\n    \u001b[36m<div\u001b[39m\n      \u001b[33mclass\u001b[39m=\u001b[32m\"min-h-screen flex items-center justify-center\"\u001b[39m\n    \u001b[36m>\u001b[39m\n      \u001b[36m<div\u001b[39m\n        \u001b[33mclass\u001b[39m=\u001b[32m\"flex flex-col items-center justify-center py-12 gap-4\"\u001b[39m\n      \u001b[36m>\u001b[39m\n        \u001b[36m<div\u001b[39m\n          \u001b[33mclass\u001b[39m=\u001b[32m\"animate-spin rounded-full border-2 border-transparent border-t-primary-500 border-r-primary-500 w-8 h-8\"\u001b[39m\n        \u001b[36m/>\u001b[39m\n        \u001b[36m<p\u001b[39m\n          \u001b[33mclass\u001b[39m=\u001b[32m\"text-text-secondary\"\u001b[39m\n        \u001b[36m>\u001b[39m\n          \u001b[0m─Éang tß║úi...\u001b[0m\n        \u001b[36m</p>\u001b[39m\n      \u001b[36m</div>\u001b[39m\n    \u001b[36m</div>\u001b[39m\n  \u001b[36m</div>\u001b[39m\n\u001b[36m</body>\u001b[39m\n    at waitForWrapper (D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\@testing-library\\dom\\dist\\wait-for.js:163:27)\n    at D:\\Work\\project UET\\Contacless Order Service\\frontend\\node_modules\\@testing-library\\dom\\dist\\query-helpers.js:86:33\n    at Object.<anonymous> (D:\\Work\\project UET\\Contacless Order Service\\frontend\\tests\\unit\\payment-polling.test.tsx:106:37)"],"fullName":"VietQR Payment Polling Redirection after success and polling stops","invocations":1,"location":null,"numPassingAsserts":0,"retryReasons":[],"status":"failed","title":"Redirection after success and polling stops"}],"endTime":1770211895465,"message":"  ΓùÅ VietQR Payment Polling ΓÇ║ Frontend polls payment status every 3 seconds\n\n    thrown: \"Exceeded timeout of 5000 ms for a test.\n    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n\n    \u001b[0m \u001b[90m 47 |\u001b[39m         jest\u001b[33m.\u001b[39museRealTimers()\u001b[33m;\u001b[39m\n     \u001b[90m 48 |\u001b[39m     })\u001b[33m;\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 49 |\u001b[39m     test(\u001b[32m'Frontend polls payment status every 3 seconds'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n     \u001b[90m    |\u001b[39m     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 50 |\u001b[39m         \u001b[36mlet\u001b[39m callCount \u001b[33m=\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n     \u001b[90m 51 |\u001b[39m         (api\u001b[33m.\u001b[39m\u001b[36mget\u001b[39m \u001b[36mas\u001b[39m jest\u001b[33m.\u001b[39m\u001b[33mMock\u001b[39m)\u001b[33m.\u001b[39mmockImplementation((url) \u001b[33m=>\u001b[39m {\n     \u001b[90m 52 |\u001b[39m             \u001b[36mif\u001b[39m (url\u001b[33m.\u001b[39mincludes(\u001b[32m'/orders/123'\u001b[39m)) \u001b[36mreturn\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m.\u001b[39mresolve({ data\u001b[33m:\u001b[39m { id\u001b[33m:\u001b[39m \u001b[35m123\u001b[39m\u001b[33m,\u001b[39m total_amount\u001b[33m:\u001b[39m \u001b[35m50000\u001b[39m } })\u001b[33m;\u001b[39m\u001b[0m\n\n      at tests/unit/payment-polling.test.tsx:49:5\n      at Object.<anonymous> (tests/unit/payment-polling.test.tsx:40:1)\n\n  ΓùÅ VietQR Payment Polling ΓÇ║ Redirection after success and polling stops\n\n    Unable to find an element with the text: Qu├⌐t m├ú QR. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.\n\n    Ignored nodes: comments, script, style\n    \u001b[36m<body>\u001b[39m\n      \u001b[36m<div>\u001b[39m\n        \u001b[36m<div\u001b[39m\n          \u001b[33mclass\u001b[39m=\u001b[32m\"min-h-screen flex items-center justify-center\"\u001b[39m\n        \u001b[36m>\u001b[39m\n          \u001b[36m<div\u001b[39m\n            \u001b[33mclass\u001b[39m=\u001b[32m\"flex flex-col items-center justify-center py-12 gap-4\"\u001b[39m\n          \u001b[36m>\u001b[39m\n            \u001b[36m<div\u001b[39m\n              \u001b[33mclass\u001b[39m=\u001b[32m\"animate-spin rounded-full border-2 border-transparent border-t-primary-500 border-r-primary-500 w-8 h-8\"\u001b[39m\n            \u001b[36m/>\u001b[39m\n            \u001b[36m<p\u001b[39m\n              \u001b[33mclass\u001b[39m=\u001b[32m\"text-text-secondary\"\u001b[39m\n            \u001b[36m>\u001b[39m\n              \u001b[0m─Éang tß║úi...\u001b[0m\n            \u001b[36m</p>\u001b[39m\n          \u001b[36m</div>\u001b[39m\n        \u001b[36m</div>\u001b[39m\n      \u001b[36m</div>\u001b[39m\n    \u001b[36m</body>\u001b[39m\n\n    \u001b[0m \u001b[90m 104 |\u001b[39m         })\u001b[33m;\u001b[39m\n     \u001b[90m 105 |\u001b[39m\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 106 |\u001b[39m         \u001b[36mconst\u001b[39m payBtn \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m screen\u001b[33m.\u001b[39mfindByText(\u001b[32m'Qu├⌐t m├ú QR'\u001b[39m\u001b[33m,\u001b[39m {}\u001b[33m,\u001b[39m { timeout\u001b[33m:\u001b[39m \u001b[35m3000\u001b[39m })\u001b[33m;\u001b[39m\n     \u001b[90m     |\u001b[39m                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 107 |\u001b[39m         \u001b[36mawait\u001b[39m act(\u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n     \u001b[90m 108 |\u001b[39m             fireEvent\u001b[33m.\u001b[39mclick(payBtn)\u001b[33m;\u001b[39m\n     \u001b[90m 109 |\u001b[39m         })\u001b[33m;\u001b[39m\u001b[0m\n\n      at waitForWrapper (node_modules/@testing-library/dom/dist/wait-for.js:163:27)\n      at node_modules/@testing-library/dom/dist/query-helpers.js:86:33\n      at Object.<anonymous> (tests/unit/payment-polling.test.tsx:106:37)\n","name":"D:\\Work\\project UET\\Contacless Order Service\\frontend\\tests\\unit\\payment-polling.test.tsx","startTime":1770211889522,"status":"failed","summary":""}],"wasInterrupted":false}

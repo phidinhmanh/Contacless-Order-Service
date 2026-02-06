@@ -24,3 +24,7 @@ class LoginRequest(BaseModel):
 class RefreshTokenRequest(BaseModel):
     """Refresh token request schema."""
     refresh_token: str
+
+class GuestLoginRequest(BaseModel):
+    """Guest login request schema."""
+    table_id: int | None = None

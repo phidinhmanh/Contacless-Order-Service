@@ -1,41 +1,30 @@
 """
 Kitchen WebSocket endpoint for real-time order updates.
-Orders are broadcast to kitchen within 2 seconds of creation.
+Security disabled for development/testing ease.
 """
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-
 from app.core.websocket import manager
 from app.models.order import Order
 
 router = APIRouter()
 
-
 @router.websocket("/ws/kitchen")
-async def kitchen_websocket(websocket: WebSocket):
-    """
-    WebSocket endpoint for kitchen display.
-    Receives real-time order updates.
+async def kitchen_websocket(websocket: WebSocket):    
+    # Just accept everything. No tokens, no checks.
+    await websocket.accept()
+    print("🚀 WS Kitchen: Connection accepted (Security: Disabled)")
     
-    Message format:
-    {
-        "type": "new_order" | "order_update" | "order_cancelled",
-        "order_id": 123,
-        "data": { ... order details ... }
-    }
-    """
     await manager.connect(websocket, channel="kitchen")
     try:
         while True:
-            # Keep connection alive, listen for ping/pong
+            # Keep the pipe open
             data = await websocket.receive_text()
-
-            # Handle ping
             if data == "ping":
                 await manager.send_personal_message({"type": "pong"}, websocket)
     except WebSocketDisconnect:
+        print("🔌 WS Kitchen: Connection closed")
         manager.disconnect(websocket, channel="kitchen")
-
 
 async def broadcast_new_order(order: Order):
     """
@@ -49,7 +38,7 @@ async def broadcast_new_order(order: Order):
             "id": order.id,
             "table_id": order.table_id,
             "status": order.status,
-            "total_price": order.total_price,
+            "total_price": float(order.total_price) if order.total_price else 0,
             "special_instructions": order.special_instructions,
             "created_at": order.created_at.isoformat() if order.created_at else None,
             "items": [
@@ -63,7 +52,6 @@ async def broadcast_new_order(order: Order):
         }
     }
     await manager.broadcast(message, channel="kitchen")
-
 
 async def broadcast_order_update(order: Order, update_type: str = "order_update"):
     """

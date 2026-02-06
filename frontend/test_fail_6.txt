@@ -1,0 +1,79 @@
+﻿  console.warn
+    A function to advance timers was called but the timers APIs are not replaced with fake timers. Call `jest.useFakeTimers()` in this test file or enable fake timers for all tests by setting 'fakeTimers': {'enableGlobally': true} in Jest configuration file.
+    Stack Trace:
+    
+        [0m [90m 27 |[39m
+         [90m 28 |[39m     afterEach(() [33m=>[39m {
+        [31m[1m>[22m[39m[90m 29 |[39m         jest[33m.[39mrunOnlyPendingTimers()[33m;[39m
+         [90m    |[39m              [31m[1m^[22m[39m
+         [90m 30 |[39m         jest[33m.[39museRealTimers()[33m;[39m
+         [90m 31 |[39m     })[33m;[39m
+         [90m 32 |[39m[0m
+    
+          Error: 
+          at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:158:13)
+          at FakeTimers.runOnlyPendingTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:59:14)
+          at Object.runOnlyPendingTimers (tests/unit/payment-polling.test.tsx:29:14)
+
+    [0m [90m 27 |[39m
+     [90m 28 |[39m     afterEach(() [33m=>[39m {
+    [31m[1m>[22m[39m[90m 29 |[39m         jest[33m.[39mrunOnlyPendingTimers()[33m;[39m
+     [90m    |[39m              [31m[1m^[22m[39m
+     [90m 30 |[39m         jest[33m.[39museRealTimers()[33m;[39m
+     [90m 31 |[39m     })[33m;[39m
+     [90m 32 |[39m[0m
+
+      at FakeTimers._checkFakeTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:152:28)
+      at FakeTimers.runOnlyPendingTimers (node_modules/@jest/fake-timers/build/modernFakeTimers.js:59:14)
+      at Object.runOnlyPendingTimers (tests/unit/payment-polling.test.tsx:29:14)
+
+node.exe : FAIL tests/unit/payment-polling.test.tsx (20.944 s)
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\ASUS\AppData\Roaming\n ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL tests/unit....tsx (20.944 s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  VietQR Payment Polling
+    ├ù Frontend polls payment status every 2 seconds when QR modal is open (20036 ms)
+    ├ù Polling stops and redirects after payment success (80 ms)
+
+  ΓùÅ VietQR Payment Polling ΓÇ║ Frontend polls payment status every 2 seconds when QR modal is open
+
+    thrown: "Exceeded timeout of 20000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 31 |[39m     })[33m;[39m
+     [90m 32 |[39m
+    [31m[1m>[22m[39m[90m 33 |[39m     test([32m'Frontend polls payment status every 2 seconds when QR modal is open'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m 34 |[39m         [90m// Use real timers for this test because polling + countdown timer creates complex interaction with fake timers[39m
+     [90m 35 |[39m         jest[33m.[39museRealTimers()[33m;[39m
+     [90m 36 |[39m[0m
+
+      at test (tests/unit/payment-polling.test.tsx:33:5)
+      at Object.describe (tests/unit/payment-polling.test.tsx:22:1)
+
+  ΓùÅ VietQR Payment Polling ΓÇ║ Polling stops and redirects after payment success
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "/payment/status?order_id=123&status=success"
+
+    Number of calls: 0
+
+    [0m [90m 106 |[39m         })[33m;[39m
+     [90m 107 |[39m
+    [31m[1m>[22m[39m[90m 108 |[39m         expect(pushMock)[33m.[39mtoHaveBeenCalledWith(expect[33m.[39mstringContaining([32m'/payment/status?order_id=123&status=success'[39m))[33m;[39m
+     [90m     |[39m                          [31m[1m^[22m[39m
+     [90m 109 |[39m     }[33m,[39m [35m10000[39m)[33m;[39m
+     [90m 110 |[39m })[33m;[39m
+     [90m 111 |[39m[0m
+
+      at Object.toHaveBeenCalledWith (tests/unit/payment-polling.test.tsx:108:26)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 2 total
+Snapshots:   0 total
+Time:        21.422 s
+Ran all test suites matching /tests\\unit\\payment-polling.test.tsx/i.
