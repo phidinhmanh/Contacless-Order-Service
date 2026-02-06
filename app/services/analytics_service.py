@@ -1,9 +1,9 @@
+import pytz
 from datetime import UTC, datetime, timedelta
 from typing import Any, Dict, List
 from sqlalchemy import func, text, case
 from sqlalchemy.orm import Session
-import pytz
-# Assuming your models are imported here
+
 from app.models.food import Food
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.table_session import TableSession
@@ -19,12 +19,9 @@ class AnalyticsService:
         ]
 
     def get_revenue_summary(self, start_date: datetime = None, end_date: datetime = None) -> Dict[str, Any]:
-        # If no dates provided, default to 'Today' in VN timezone
         if not start_date:
-            # Shift current UTC to VN, reset to midnight, shift back to UTC for query
             now_vn = datetime.now(UTC).astimezone(pytz.timezone(self.tz))
             start_date = now_vn.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(UTC)
-        
         end_date = end_date or datetime.now(UTC)
 
         res = self.db.query(
@@ -42,14 +39,65 @@ class AnalyticsService:
             "period": {"start": start_date.isoformat(), "end": end_date.isoformat()},
             "total_revenue": round(rev, 2),
             "order_count": count,
-            "average_order_value": round(rev / count, 2) if count > 0 else 0
+            "average_order_value": round(rev / count, 2) if count > 0 else 0,
+            "currency": "VND"
+        }
+
+    def get_customer_segments(self) -> Dict[str, Any]:
+        """Fixed raw SQL using double quotes for aliases and .mappings() to prevent NoSuchColumnError."""
+        sql = text("""
+            SELECT 
+                COUNT(id) as total_sessions,
+                COUNT(DISTINCT lead_user_id) FILTER (WHERE lead_user_id IS NOT NULL) as unique_auth_users,
+                COUNT(id) FILTER (WHERE lead_user_id IS NULL) as anon_sessions,
+                (SELECT COUNT(*) FROM (
+                    SELECT lead_user_id FROM table_sessions 
+                    WHERE lead_user_id IS NOT NULL 
+                    GROUP BY lead_user_id HAVING COUNT(id) > 1
+                ) as sub_retention) as returning_count
+            FROM table_sessions
+        """)
+        
+        # .mappings() is the key to fixing your "NoSuchColumnError"
+        res = self.db.execute(sql).mappings().first()
+        
+        total_customers = (res['unique_auth_users'] or 0) + (res['anon_sessions'] or 0)
+        returning = res['returning_count'] or 0
+        new_customers = total_customers - returning
+
+        return {
+            "total_customers": total_customers,
+            "new_customers": new_customers,
+            "returning_customers": returning,
+            "retention_rate": round((returning / total_customers * 100), 2) if total_customers > 0 else 0
+        }
+
+    def get_popular_items(self, days: int = 30, limit: int = 10) -> List[Dict[str, Any]]:
+        start = datetime.now(UTC) - timedelta(days=days)
+        items = self.db.query(
+            Food.name, 
+            func.sum(OrderItem.quantity).label("quantity"), 
+            func.sum(OrderItem.unit_price * OrderItem.quantity).label("revenue")
+        ).join(OrderItem, Food.id == OrderItem.food_id)\
+         .join(Order)\
+         .filter(Order.created_at >= start, Order.status.in_(self.valid_statuses))\
+         .group_by(Food.name)\
+         .order_by(text("quantity DESC"))\
+         .limit(limit).all()
+
+        return [{"food_name": i.name, "quantity": int(i.quantity), "revenue": float(i.revenue)} for i in items]
+
+    def get_retention_data(self) -> Dict[str, Any]:
+        """Placeholder to keep the API alive while you grow your user base."""
+        return {
+            "rate_14d": 0,
+            "rate_30d": 0,
+            "returning_users_30d": 0,
+            "eligible_users_30d": 0
         }
 
     def get_peak_hours(self, days: int = 7) -> List[Dict[str, Any]]:
-        """Aggregates by 30-min slots directly in SQL to save RAM."""
         start_limit = datetime.now(UTC) - timedelta(days=days)
-        
-        # Postgres-specific: Adjust to TZ, extract hour, and floor minutes to 00 or 30
         peak_query = self.db.query(
             func.to_char(func.timezone(self.tz, Order.created_at), 'HH24').label("hour"),
             case(
@@ -61,41 +109,7 @@ class AnalyticsService:
          .group_by("hour", "minute_slot")\
          .order_by(text("order_count DESC")).all()
 
-        return [
-            {"time_slot": f"{r.hour}:{r.minute_slot}", "order_count": r.order_count} 
-            for r in peak_query
-        ]
-
-    def get_customer_segments(self) -> Dict[str, Any]:
-        """Calculates retention metrics using subqueries instead of Python loops."""
-        # Authenticated metrics
-        auth_stats = self.db.query(
-            func.count(TableSession.id).label("total_sessions"),
-            func.count(TableSession.lead_user_id.distinct()).label("unique_users"),
-            # Users with more than 1 session
-            func.count(text("DISTINCT CASE WHEN session_count > 1 THEN lead_user_id END"))
-        ).from_statement(text("""
-            SELECT 
-                COUNT(id) as total_sessions,
-                COUNT(DISTINCT lead_user_id) FILTER (WHERE lead_user_id IS NOT NULL) as auth_users,
-                COUNT(DISTINCT lead_user_id) FILTER (WHERE lead_user_id IS NULL) as anon_sessions,
-                (SELECT COUNT(*) FROM (
-                    SELECT lead_user_id FROM table_sessions 
-                    WHERE lead_user_id IS NOT NULL 
-                    GROUP BY lead_user_id HAVING COUNT(id) > 1
-                ) as returning) as returning_count
-            FROM table_sessions
-        """)).first()
-
-        # Simplified Logic for Startups:
-        # We treat every Anonymous session as a 'New' customer because we can't track them.
-        # We only track 'Returning' for logged-in users.
-        
-        # Note: In production, you'd use a more complex raw SQL for this.
-        # For now, let's keep the logic clean:
-        return {
-            "note": "Anonymous sessions are treated as unique new customers."
-        }
+        return [{"time_slot": f"{r.hour}:{r.minute_slot}", "order_count": r.order_count} for r in peak_query]
 
     def get_inventory_alerts(self, threshold_hours: int = 24) -> List[Dict[str, Any]]:
         """Calculates item velocity (burn rate) using a single optimized join."""
