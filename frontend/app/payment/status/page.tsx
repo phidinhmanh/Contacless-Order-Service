@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, ArrowRight } from 'lucide-react';
@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import type { PaymentStatus } from '@/lib/types';
 
-export default function GenericPaymentStatusPage() {
+// 1. Tách logic UI và xử lý SearchParams vào component con
+function PaymentResultContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -18,34 +19,21 @@ export default function GenericPaymentStatusPage() {
     const isCashPayment = provider === 'cash';
     const isSuccess = statusParam === 'success' || isCashPayment;
 
-    // Default to completed if success param or cash, otherwise failed (since we only redirect here on success usually)
-    // If we want to support pending here, we'd need more logic, but current flow handles pending in the modal or [txId] page
     const [status] = useState<PaymentStatus>(
         isSuccess ? 'completed' : 'failed'
     );
 
     useEffect(() => {
         if (orderId) {
-            console.log(`💳 Payment result for Order #${orderId}: ${status}${provider ? ` (Provider: ${provider})` : ''}`);
+            console.log(`💳 Kết quả thanh toán cho Đơn hàng #${orderId}: ${status}${provider ? ` (Phương thức: ${provider})` : ''}`);
         }
     }, [orderId, status, provider]);
 
-    // Navigate to order tracking
     const handleViewOrder = () => {
-        // If we have orderId, we can track the order. 
-        // Note: Tracking usually uses order ID or transaction ID? 
-        // Looking at [txId] page, it used txId for tracking URL -> `/tracking/${transactionId}`. 
-        // But if we don't have txId (e.g. VietQR success only passed orderId), we might need to change tracking page to support orderId?
-        // Let's assume /tracking supports orderId via query param or we assume orderId maps to tracking logic.
-        // Or if tracking page expects txId... check tracking page?
-        // For now, let's redirect to menu or tracking with order_id query param if tracking page supports it.
-        // If not, just redirect to Menu is safer.
         if (orderId) {
-            // Assuming tracking page might support query param ?order_id=... or we just go to menu
-            // Let's try sending to tracking page. If it fails (404), user will report.
-            // Ideally we should check tracking page.
-            // But valid usage of orderId suggests we can track it.
-            router.push(`/order/${orderId}`); // Ordering flow usually goes to order details
+            // Điều hướng về trang chi tiết đơn hàng (tracking)
+            // Trong Next.js App Router, thường là /order/[id] hoặc /tracking/[id]
+            router.push(`/order/${orderId}`);
         } else {
             router.push('/menu');
         }
@@ -58,18 +46,18 @@ export default function GenericPaymentStatusPage() {
     if (!orderId) {
         return (
             <div className="min-h-screen bg-dark-bg flex items-center justify-center p-6 text-text-muted">
-                Invalid request
+                Yêu cầu không hợp lệ
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center p-6 relative">
+        <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
             {status === 'completed' ? (
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center"
+                    className="flex flex-col items-center z-10"
                 >
                     {/* Confetti Effect */}
                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -77,8 +65,8 @@ export default function GenericPaymentStatusPage() {
                             <motion.div
                                 key={i}
                                 initial={{
-                                    x: Math.random() * window.innerWidth,
-                                    y: window.innerHeight + 100,
+                                    x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
+                                    y: (typeof window !== 'undefined' ? window.innerHeight : 1000) + 100,
                                     rotate: 0,
                                 }}
                                 animate={{
@@ -92,11 +80,7 @@ export default function GenericPaymentStatusPage() {
                                 }}
                                 className={cn(
                                     'absolute w-3 h-3 rounded-sm',
-                                    i % 3 === 0
-                                        ? 'bg-primary-500'
-                                        : i % 3 === 1
-                                            ? 'bg-secondary-500'
-                                            : 'bg-yellow-500'
+                                    i % 3 === 0 ? 'bg-primary-500' : i % 3 === 1 ? 'bg-secondary-500' : 'bg-yellow-500'
                                 )}
                             />
                         ))}
@@ -111,13 +95,13 @@ export default function GenericPaymentStatusPage() {
                         <CheckCircle className="text-secondary-400" size={48} />
                     </motion.div>
 
-                    <h1 className="text-2xl font-bold text-text-primary mb-2">
+                    <h1 className="text-2xl font-bold text-text-primary mb-2 text-center">
                         {isCashPayment ? 'Đặt món thành công!' : 'Thanh toán thành công!'}
                     </h1>
                     <p className="text-text-secondary text-center max-w-xs mb-8">
                         {isCashPayment
-                            ? 'Vui lòng thanh toán tại quầy khi nhận món'
-                            : 'Đơn hàng của bạn đã được xác nhận'}
+                            ? 'Vui lòng thanh toán tại quầy khi nhận món. Nhà bếp đang chuẩn bị cho bạn!'
+                            : 'Đơn hàng của bạn đã được xác nhận và đang được xử lý.'}
                     </p>
 
                     <div className="w-full max-w-xs space-y-3">
@@ -138,7 +122,7 @@ export default function GenericPaymentStatusPage() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center"
+                    className="flex flex-col items-center z-10"
                 >
                     <motion.div
                         initial={{ scale: 0 }}
@@ -153,7 +137,7 @@ export default function GenericPaymentStatusPage() {
                         Có lỗi xảy ra
                     </h1>
                     <p className="text-text-secondary text-center max-w-xs mb-8">
-                        Không xác định được trạng thái thanh toán.
+                        Không xác định được trạng thái thanh toán hoặc thanh toán bị hủy.
                     </p>
 
                     <div className="w-full max-w-xs space-y-3">
@@ -164,5 +148,19 @@ export default function GenericPaymentStatusPage() {
                 </motion.div>
             )}
         </div>
+    );
+}
+
+// 2. Export mặc định bọc trong Suspense để tránh lỗi "missing-suspense-with-csr-bailout"
+export default function GenericPaymentStatusPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center p-6">
+                <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-text-secondary animate-pulse">Đang tải kết quả...</p>
+            </div>
+        }>
+            <PaymentResultContent />
+        </Suspense>
     );
 }

@@ -18,6 +18,7 @@ import type { CreateOrderRequest } from '@/lib/types';
 
 export default function MenuPage() {
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
     const { items, tableId, getItemCount, specialInstructions, clearCart } = useCartStore();
     const itemCount = getItemCount();
 
@@ -45,6 +46,10 @@ export default function MenuPage() {
     useEffect(() => {
         if (menuError) setError(menuError);
     }, [menuError]);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Filter foods by category and search
     const filteredFoods = useMemo(() => {
@@ -104,6 +109,15 @@ export default function MenuPage() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <LoadingState message="Đang tải thực đơn..." />
+            </div>
+        );
+    }
+
+    if (!mounted) {
+        return (
+            <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+                {/* Return a simple skeleton or loading state that matches SSR */}
+                <div className="animate-pulse bg-dark-card w-12 h-12 rounded-full" />
             </div>
         );
     }

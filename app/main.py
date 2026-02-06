@@ -1,27 +1,25 @@
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.api.v1.router import api_router
 from app.core.config import settings
-from app.db.base import Base
 from app.db.session import engine
-
-
-
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Life span events:
-    - Startup: Create database tables (if not using Alembic)
-    - Shutdown: Clean up resources
+    Startup: 
+    - Database tables are now handled by Alembic (external to this code).
+    - Ensure cloud resources or caches are warmed up here.
     """
-    Base.metadata.create_all(bind=engine)
     yield
-
+    """
+    Shutdown:
+    - Close the database connection pool.
+    """
+    await engine.dispose()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -30,45 +28,37 @@ app = FastAPI(
 )
 
 # CORS configuration
+# Using a cleaner approach to origin management
 if settings.DEBUG:
-    # In debug mode, allow all origins via regex to support LAN/Phone development
+    # Wide open for local development and testing
     app.add_middleware(
         CORSMiddleware,
-        allow_origin_regex=r"https?://.*",
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 else:
-    cors_origins = settings.cors_origins_list
+    # Strict whitelist for production
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=cors_origins if "*" not in cors_origins else [],
-        allow_origin_regex=r"https?://.*" if "*" in cors_origins else None,
+        allow_origins=settings.cors_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-# Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-
-@app.get("/health")
+@app.get("/health", tags=["system"])
 def health_check():
-    """Health check endpoint."""
     return {"status": "healthy"}
 
-
-# Mount static files for serving images
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
-@app.get("/")
+@app.get("/", tags=["system"])
 def root():
-    """Root endpoint."""
     return {"message": f"Welcome to {settings.PROJECT_NAME}"}
-
 
 if __name__ == "__main__":
     import uvicorn

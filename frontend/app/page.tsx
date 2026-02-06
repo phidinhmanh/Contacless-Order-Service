@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { UtensilsCrossed, User, Phone, UserPlus } from 'lucide-react';
@@ -10,11 +10,19 @@ import { Input } from '@/components/ui/Input';
 import { guestAuth, phoneLogin, isAuthenticated } from '@/lib/auth';
 import { useCartStore } from '@/store/cartStore';
 
-export default function WelcomePage() {
+// 1. Tách logic UI chính ra một component con
+function WelcomeContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+
+    // Lấy table_id từ URL và cập nhật vào Store
     const tableId = searchParams.get('table_id') || searchParams.get('table') || '1';
     const setTableId = useCartStore((state) => state.setTableId);
+
+    // Cập nhật tableId vào store khi component mount
+    useEffect(() => {
+        setTableId(tableId);
+    }, [tableId, setTableId]);
 
     const [isLoading, setIsLoading] = useState(false);
     const [showLoginForm, setShowLoginForm] = useState(false);
@@ -22,21 +30,17 @@ export default function WelcomePage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    // Auto-login for authenticated users
     useEffect(() => {
         if (isAuthenticated()) {
-            setTableId(tableId);
             router.push('/menu');
         }
-    }, [router, setTableId, tableId]);
+    }, [router]);
 
     const handleStartOrdering = async () => {
         setIsLoading(true);
         setError('');
-
         try {
             await guestAuth(tableId);
-            setTableId(tableId);
             router.push('/menu');
         } catch (err: any) {
             setError(err.message || 'Không thể kết nối. Vui lòng thử lại.');
@@ -49,10 +53,8 @@ export default function WelcomePage() {
         e.preventDefault();
         setIsLoading(true);
         setError('');
-
         try {
             await phoneLogin(phone, password);
-            setTableId(tableId);
             router.push('/menu');
         } catch (err: any) {
             setError(err.message || 'Sai số điện thoại hoặc mật khẩu.');
@@ -63,7 +65,6 @@ export default function WelcomePage() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-dark-bg via-dark-surface to-dark-bg">
-            {/* Restaurant Logo/Icon */}
             <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
@@ -75,22 +76,16 @@ export default function WelcomePage() {
                 </div>
             </motion.div>
 
-            {/* Welcome Text */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 className="text-center mb-8"
             >
-                <h1 className="text-3xl font-bold text-text-primary mb-2">
-                    Chào mừng!
-                </h1>
-                <p className="text-text-secondary">
-                    Đặt món dễ dàng, không cần chờ đợi
-                </p>
+                <h1 className="text-3xl font-bold text-text-primary mb-2">Chào mừng!</h1>
+                <p className="text-text-secondary">Đặt món dễ dàng, không cần chờ đợi</p>
             </motion.div>
 
-            {/* Table Badge */}
             <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -105,7 +100,6 @@ export default function WelcomePage() {
                 </Badge>
             </motion.div>
 
-            {/* Error Message */}
             {error && (
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -116,7 +110,6 @@ export default function WelcomePage() {
                 </motion.div>
             )}
 
-            {/* Main Actions */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -124,7 +117,6 @@ export default function WelcomePage() {
                 className="w-full max-w-sm space-y-4"
             >
                 {showLoginForm ? (
-                    /* Phone Login Form */
                     <form onSubmit={handlePhoneLogin} className="space-y-4">
                         <Input
                             type="tel"
@@ -157,13 +149,11 @@ export default function WelcomePage() {
                                 onClick={() => router.push('/register')}
                                 className="flex-1 flex items-center justify-center gap-1 text-primary-400 hover:text-primary-300 py-2"
                             >
-                                <UserPlus size={16} />
-                                Đăng ký
+                                <UserPlus size={16} /> Đăng ký
                             </button>
                         </div>
                     </form>
                 ) : (
-                    /* Guest Auth */
                     <>
                         <Button
                             onClick={handleStartOrdering}
@@ -173,19 +163,16 @@ export default function WelcomePage() {
                         >
                             Bắt đầu đặt món
                         </Button>
-
                         <button
                             onClick={() => setShowLoginForm(true)}
                             className="w-full flex items-center justify-center gap-2 text-text-secondary hover:text-primary-400 transition-colors py-3"
                         >
-                            <User size={18} />
-                            Đăng nhập với số điện thoại
+                            <User size={18} /> Đăng nhập với số điện thoại
                         </button>
                     </>
                 )}
             </motion.div>
 
-            {/* Footer */}
             <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -195,5 +182,18 @@ export default function WelcomePage() {
                 Powered by Contactless Order Service
             </motion.p>
         </div>
+    );
+}
+
+// 2. Export mặc định bao bọc bởi Suspense để Next.js build thành công
+export default function WelcomePage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-dark-bg">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary-500"></div>
+            </div>
+        }>
+            <WelcomeContent />
+        </Suspense>
     );
 }
