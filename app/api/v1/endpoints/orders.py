@@ -11,7 +11,7 @@ from app.services.order_service import OrderService
 router = APIRouter()
 
 
-@router.get("/", response_model=list[OrderResponse])
+@router.get("", response_model=list[OrderResponse])
 def get_orders(
     skip: int = 0,
     limit: int = 100,
@@ -62,7 +62,8 @@ async def create_order(
         )
 
     order_service = OrderService(db)
-    order = order_service.create_order(order_in)
+    # Pass current authenticated user to the service
+    order = order_service.create_order(order_in, user_id=current_user.id)
     await broadcast_new_order(order)
     return order
 

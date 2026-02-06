@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Boolean, String
+from sqlalchemy import Column, Integer, Boolean, String, DateTime
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.models.base import Base
 
@@ -11,6 +11,7 @@ class Table(Base):
     capacity: Mapped[int] = mapped_column(Integer, default=4)
     is_occupied: Mapped[bool] = mapped_column(Boolean, default=False)
     qr_code_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    qr_token: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)  # Rotating security token
+    deleted_at = Column(DateTime, nullable=True)  # Soft delete
 
     orders = relationship("Order", back_populates="table")
-

@@ -18,13 +18,22 @@ import api from '@/lib/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+interface Category {
+    id: number;
+    name: string;
+    description?: string;
+    display_order: number;
+    is_active: boolean;
+}
+
 interface Food {
     id: number;
     name: string;
     price: number;
-    category: string;
+    category_id: number | null;
     stock_quantity: number | null;
     is_available: boolean;
+    is_out_of_stock: boolean;
     description?: string;
     image_url?: string;
 }
@@ -32,20 +41,20 @@ interface Food {
 interface FoodFormData {
     name: string;
     price: number;
-    category: string;
+    category_id: number | null;
     stock_quantity: number;
     description?: string;
 }
 
 export default function FoodManagementPage() {
     const [foods, setFoods] = useState<Food[]>([]);
-    const [categories, setCategories] = useState<string[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<number | ''>('');
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -53,7 +62,7 @@ export default function FoodManagementPage() {
     const [formData, setFormData] = useState<FoodFormData>({
         name: '',
         price: 0,
-        category: '',
+        category_id: null,
         stock_quantity: 0,
         description: ''
     });
@@ -74,11 +83,11 @@ export default function FoodManagementPage() {
         setIsLoading(true);
         try {
             const params: Record<string, string> = { include_unavailable: 'true' };
-            if (selectedCategory) params.category = selectedCategory;
+            if (selectedCategory !== '') params.category_id = String(selectedCategory);
 
             const [foodsRes, categoriesRes] = await Promise.all([
                 api.get('/foods/', { params }),
-                api.get('/foods/categories')
+                api.get('/categories')
             ]);
             setFoods(foodsRes.data);
             setCategories(categoriesRes.data);
@@ -93,9 +102,15 @@ export default function FoodManagementPage() {
         food.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const getCategoryName = (categoryId: number | null): string => {
+        if (!categoryId) return 'Chưa phân loại';
+        const cat = categories.find(c => c.id === categoryId);
+        return cat?.name || 'Không xác định';
+    };
+
     const openCreateModal = () => {
         setEditingFood(null);
-        setFormData({ name: '', price: 0, category: '', stock_quantity: 0, description: '' });
+        setFormData({ name: '', price: 0, category_id: null, stock_quantity: 0, description: '' });
         setShowModal(true);
     };
 
@@ -104,7 +119,7 @@ export default function FoodManagementPage() {
         setFormData({
             name: food.name,
             price: food.price,
-            category: food.category,
+            category_id: food.category_id,
             stock_quantity: food.stock_quantity || 0,
             description: food.description || ''
         });
@@ -234,12 +249,12 @@ export default function FoodManagementPage() {
                 </div>
                 <select
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    onChange={(e) => setSelectedCategory(e.target.value === '' ? '' : Number(e.target.value))}
                     className="px-4 py-2.5 bg-dark-card border border-dark-border rounded-xl text-text-primary focus:outline-none focus:border-primary-500"
                 >
                     <option value="">Tất cả danh mục</option>
                     {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                 </select>
             </div>
@@ -312,7 +327,7 @@ export default function FoodManagementPage() {
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className="px-2 py-1 bg-primary-500/10 text-primary-400 rounded-lg text-sm">
-                                                {food.category}
+                                                {getCategoryName(food.category_id)}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-right text-text-primary">
@@ -446,21 +461,18 @@ export default function FoodManagementPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-text-secondary mb-1">
-                                    Danh mục *
+                                    Danh mục
                                 </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.category}
-                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    list="categories"
+                                <select
+                                    value={formData.category_id ?? ''}
+                                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value === '' ? null : Number(e.target.value) })}
                                     className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-xl text-text-primary focus:outline-none focus:border-primary-500"
-                                />
-                                <datalist id="categories">
+                                >
+                                    <option value="">Chọn danh mục</option>
                                     {categories.map(cat => (
-                                        <option key={cat} value={cat} />
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
-                                </datalist>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-text-secondary mb-1">

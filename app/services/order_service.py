@@ -19,15 +19,18 @@ class OrderService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_order(self, order_in: OrderCreate) -> Order:
+    def create_order(self, order_in: OrderCreate, user_id: int | None = None) -> Order:
         """
         Create a new order with items.
         Validates user, table, and food items exist.
         Calculates total price automatically.
         """
-        # Validate user exists (only if user_id is provided - guest orders don't require it)
-        if order_in.user_id is not None:
-            user = self.db.query(User).filter(User.id == order_in.user_id).first()
+        # Use provided user_id or fall back to schema
+        effective_user_id = user_id or order_in.user_id
+
+        # Validate user exists if provided
+        if effective_user_id is not None:
+            user = self.db.query(User).filter(User.id == effective_user_id).first()
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
 
@@ -46,9 +49,11 @@ class OrderService:
                 return existing_order
 
         order = Order(
-            user_id=order_in.user_id,
+            user_id=effective_user_id,
             table_id=order_in.table_id,
+            table_session_id=order_in.table_session_id,
             status="pending",
+            payment_status="unpaid",
             idempotency_key=order_in.idempotency_key,
             special_instructions=order_in.special_instructions,
         )
@@ -142,6 +147,7 @@ class OrderService:
                 food.is_available = True
 
         order.status = "cancelled"
+        order.payment_status = "unpaid"
         self.db.commit()
         self.db.refresh(order)
 

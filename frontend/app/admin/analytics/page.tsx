@@ -13,7 +13,8 @@ import {
     Calendar,
     BarChart3,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    Download
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import api from '@/lib/api';
@@ -65,38 +66,33 @@ export default function AnalyticsPage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
+                // Use a consistent reference for "Now" in Vietnam
                 const now = new Date();
                 const start = new Date();
-                let days = 7;
 
                 if (period === 'day') {
+                    // Set to 00:00:00 local time
                     start.setHours(0, 0, 0, 0);
-                    days = 1;
-                } else if (period === 'week') {
-                    start.setDate(now.getDate() - 7);
-                    days = 7;
                 } else {
-                    start.setDate(now.getDate() - 30);
-                    days = 30;
+                    const days = period === 'week' ? 7 : 30;
+                    start.setDate(now.getDate() - days);
                 }
 
+                // Use ISO strings; the backend will convert these to UTC based on ICT logic
                 const startDateStr = start.toISOString();
                 const endDateStr = now.toISOString();
 
-                const [
-                    revenueRes,
-                    popularRes,
-                    peakRes,
-                    segmentsRes,
-                    retentionRes,
-                    usersRes
-                ] = await Promise.all([
+                // Ensure the days parameter matches your backend's expected integer
+                const daysParam = period === 'day' ? 1 : period === 'week' ? 7 : 30;
+
+                const [revenueRes, popularRes, peakRes, segmentsRes, retentionRes, usersRes] = await Promise.all([
                     api.get(`/analytics/revenue?start_date=${startDateStr}&end_date=${endDateStr}`),
-                    api.get(`/analytics/popular-items?days=${days}&limit=10`),
-                    api.get(`/analytics/peak-hours?days=${days}`),
+                    api.get(`/analytics/popular-items?days=${daysParam}&limit=10`),
+                    api.get(`/analytics/peak-hours?days=${daysParam}`),
                     api.get('/analytics/customers'),
                     api.get('/analytics/retention'),
-                    api.get('/users/?limit=100').catch(() => ({ data: [] }))
+                    // Note: /users endpoint requires ADMIN role - gracefully handle if not authorized
+                    api.get('/users', { params: { limit: 100 } }).catch(() => ({ data: [] }))
                 ]);
 
                 setRevenueStats(revenueRes.data);
@@ -114,6 +110,23 @@ export default function AnalyticsPage() {
 
         fetchData();
     }, [period]);
+
+    const handleExport = async () => {
+        try {
+            const response = await api.get('/analytics/export', {
+                responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Failed to export report:', error);
+        }
+    };
 
     // Gender distribution with fixed labels
     const genderData = React.useMemo(() => {
@@ -170,6 +183,13 @@ export default function AnalyticsPage() {
                             </button>
                         ))}
                     </div>
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-4 py-2 bg-dark-card border border-dark-border rounded-xl text-text-secondary hover:text-text-primary hover:border-text-muted transition-all"
+                    >
+                        <Download size={18} />
+                        <span className="hidden sm:inline">Xuất báo cáo</span>
+                    </button>
                     <button className="p-2 bg-dark-card border border-dark-border rounded-xl text-text-muted hover:text-text-primary transition-colors" title="Chọn ngày">
                         <Calendar size={20} />
                     </button>

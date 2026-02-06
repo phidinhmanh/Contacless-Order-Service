@@ -28,14 +28,24 @@ class OrderStatus(str, Enum):
         return transitions.get(current_status)
 
 
+class PaymentStatusEnum(str, Enum):
+    """Payment status for orders."""
+    UNPAID = "unpaid"
+    PAID = "paid"
+    REFUNDED = "refunded"
+    FAILED = "failed"
+
+
 class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     table_id = Column(Integer, ForeignKey("tables.id", ondelete="SET NULL"), nullable=True)
+    table_session_id = Column(Integer, ForeignKey("table_sessions.id", ondelete="SET NULL"), nullable=True, index=True)
     total_price = Column(Float, default=0.0)
     status = Column(String(20), default="pending", index=True)
+    payment_status = Column(String(20), default="unpaid", index=True)  # Avoids JOINs with Payment table
     idempotency_key = Column(String(100), unique=True, nullable=True, index=True)
     special_instructions = Column(String(500), nullable=True)  # For "không cay", "nhiều sốt", etc.
     created_at = Column(DateTime, default=lambda: datetime.now(UTC), index=True)
@@ -44,6 +54,7 @@ class Order(Base):
     # Relationships
     user = relationship("User", back_populates="orders")
     table = relationship("Table", back_populates="orders")
+    table_session = relationship("TableSession", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
     # Composite index for common queries
@@ -59,7 +70,7 @@ class OrderItem(Base):
     order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
     food_id = Column(Integer, ForeignKey("foods.id", ondelete="SET NULL"), nullable=True)
     quantity = Column(Integer, default=1)
-    unit_price = Column(Float, nullable=False)  # Store price at time of order
+    unit_price = Column(Float, nullable=False)  # Store price at time of order (Price Snapshot)
 
     # Relationships
     order = relationship("Order", back_populates="items")
@@ -69,4 +80,3 @@ class OrderItem(Base):
     def food_name(self) -> str | None:
         """Get food name from relationship for API response."""
         return self.food.name if self.food else None
-

@@ -112,6 +112,7 @@ class PaymentService:
                 order = self.db.query(Order).filter(Order.id == payment.order_id).first()
                 if order:
                     order.status = "paid"
+                    order.payment_status = "paid"
 
         elif new_status == PaymentStatus.FAILED:
             # Automatic rollback - reset order to pending
@@ -119,6 +120,7 @@ class PaymentService:
                 order = self.db.query(Order).filter(Order.id == payment.order_id).first()
                 if order:
                     order.status = "pending"
+                    order.payment_status = "failed"
 
         self.db.commit()
         self.db.refresh(payment)
@@ -164,6 +166,7 @@ class PaymentService:
                 order = self.db.query(Order).filter(Order.id == payment.order_id).first()
                 if order:
                     order.status = "pending"
+                    order.payment_status = "failed"
 
         if expired:
             self.db.commit()
@@ -301,6 +304,7 @@ class PaymentService:
 
             # Update order status
             order.status = "paid"
+            order.payment_status = "paid"
 
             self.db.commit()
             self.db.refresh(payment)

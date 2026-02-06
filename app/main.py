@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.db.session import engine
+from app.models.base import Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,12 +20,13 @@ async def lifespan(app: FastAPI):
     Shutdown:
     - Close the database connection pool.
     """
-    await engine.dispose()
+    engine.dispose()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 # CORS configuration

@@ -33,6 +33,7 @@ class OrderBase(BaseModel):
     """Base order schema with common fields."""
     user_id: int | None = None  # Optional for guest users
     table_id: int
+    table_session_id: int | None = None  # Links order to session
     special_instructions: str | None = None
 
 
@@ -45,6 +46,7 @@ class OrderCreate(OrderBase):
 class OrderUpdate(BaseModel):
     """Schema for updating an order. All fields optional."""
     status: str | None = None
+    payment_status: str | None = None
     total_price: float | None = None
 
 
@@ -53,6 +55,7 @@ class OrderResponse(OrderBase):
     id: int
     total_price: float
     status: str
+    payment_status: str | None = "unpaid"
     idempotency_key: str | None
     special_instructions: str | None
     created_at: datetime
@@ -65,14 +68,3 @@ class OrderResponse(OrderBase):
     def total_amount(self) -> float:
         """Alias for total_price for frontend compatibility."""
         return self.total_price
-
-    @computed_field
-    @property
-    def payment_status(self) -> str:
-        """Helper to distinguish between pending-unpaid and other states."""
-        if self.status in ["paid", "completed", "ready", "preparing", "confirmed"]:
-            return "paid"
-        if self.status == "payment_failed":
-            return "failed"
-        return "unpaid"
-

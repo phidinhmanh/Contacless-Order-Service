@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 
 from app.models.base import Base
 
+
 class TableSession(Base):
     __tablename__ = "table_sessions"
 
@@ -12,10 +13,11 @@ class TableSession(Base):
     lead_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     guest_count = Column(Integer, default=1)
     status = Column(String(20), default="active")  # active, closed
-    
+
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     closed_at = Column(DateTime, nullable=True)
 
     # Relationships
     table = relationship("Table", backref="sessions")
     lead_user = relationship("User", backref="lead_sessions")
+    orders = relationship("Order", back_populates="table_session")

@@ -7,7 +7,8 @@ import { UtensilsCrossed, User, Phone, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
-import { guestAuth, phoneLogin, isAuthenticated } from '@/lib/auth';
+import { DemographicModal } from '@/components/DemographicModal';
+import { guestAuth, phoneLogin, isAuthenticated, updateGuestDemographics } from '@/lib/auth';
 import { useCartStore } from '@/store/cartStore';
 
 // 1. Tách logic UI chính ra một component con
@@ -26,6 +27,7 @@ function WelcomeContent() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [showLoginForm, setShowLoginForm] = useState(false);
+    const [showDemographicModal, setShowDemographicModal] = useState(false);
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -41,11 +43,21 @@ function WelcomeContent() {
         setError('');
         try {
             await guestAuth(tableId);
-            router.push('/menu');
+            // Show demographic survey for better analytics
+            setShowDemographicModal(true);
         } catch (err: any) {
             setError(err.message || 'Không thể kết nối. Vui lòng thử lại.');
-        } finally {
             setIsLoading(false);
+        }
+    };
+
+    const onDemographicSubmit = async (data: { gender: string; age_group: string }) => {
+        try {
+            await updateGuestDemographics(data.gender, data.age_group);
+        } catch (err) {
+            console.error('Failed to update demographics', err);
+        } finally {
+            router.push('/menu');
         }
     };
 
@@ -65,6 +77,11 @@ function WelcomeContent() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-dark-bg via-dark-surface to-dark-bg">
+            <DemographicModal
+                isOpen={showDemographicModal}
+                onClose={() => router.push('/menu')}
+                onSubmit={onDemographicSubmit}
+            />
             <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
