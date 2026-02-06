@@ -84,7 +84,7 @@ function PaymentSelectionContent() {
             if (provider === 'cash') {
                 // [FIX] Gọi API báo thanh toán tiền mặt để Kitchen nhận đơn ngay
                 await api.post(`/orders/${orderId}/pay-cash`);
-                router.push(`/payment/result?order_id=${orderId}&provider=cash&status=success`);
+                router.push(`/payment/status?order_id=${orderId}&provider=cash&status=success`);
                 return;
             }
 
