@@ -1,27 +1,42 @@
+#!/usr/bin/env python3
+"""
+Script to migrate existing tables to use qr_token for domain-agnostic QR codes.
+Run this after upgrading to regenerate all QR codes with tokens.
+
+Usage: uv run python scripts/regenerate_qrs.py
+"""
 import os
-import qrcode
-from sqlalchemy.orm import Session
+import secrets
 import sys
 
-# Add the project root to sys.path to allow imports from 'app'
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import qrcode
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models.table import Table
-from app.core.config import settings
 
-# Configuration
+
 QR_CODE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "qr_codes")
 
 
-def generate_qr_code(table_id: int, table_number: int, base_url: str) -> str:
+def generate_qr_token() -> str:
+    """Generate a secure, URL-safe token for QR codes."""
+    return secrets.token_urlsafe(16)
+
+
+def generate_qr_code(table_id: int, table_number: int, qr_token: str) -> str:
     """
-    Generate QR code for a table and save to disk.
-    Returns the path to the saved QR code.
+    Generate QR code for a table using a TOKEN-BASED URL.
+    This makes QR codes DOMAIN-AGNOSTIC.
     """
     os.makedirs(QR_CODE_DIR, exist_ok=True)
     
-    table_url = f"{base_url}/?table={table_id}"
+    # Use relative path with token - DOMAIN AGNOSTIC!
+    table_url = f"/t/{qr_token}"
     
     qr = qrcode.QRCode(
         version=1,
@@ -40,27 +55,37 @@ def generate_qr_code(table_id: int, table_number: int, base_url: str) -> str:
     
     return f"/static/qr_codes/{filename}"
 
+
 def main():
+    """Regenerate all table QR codes with tokens."""
+    print("🔄 Regenerating QR codes with domain-agnostic tokens...")
+    
     db = SessionLocal()
     try:
-        tables = db.query(Table).all()
-        print(f"Found {len(tables)} tables to regenerate.")
+        tables = db.query(Table).filter(Table.deleted_at == None).all()
+        
+        if not tables:
+            print("ℹ️  No tables found in database.")
+            return
         
         for table in tables:
-            print(f"Regenerating QR for Table {table.table_number} (ID: {table.id})...")
-            qr_path = generate_qr_code(table.id, table.table_number, settings.FRONTEND_URL)
-            table.qr_code_path = qr_path
-            print(f"  -> Saved to {qr_path}")
+            # Generate new token if missing
+            if not table.qr_token:
+                table.qr_token = generate_qr_token()
+                print(f"  📝 Generated token for Table {table.table_number}")
             
-        db.commit()
-        print("\nAll QR codes regenerated successfully!")
-        print(f"New base URL: {settings.FRONTEND_URL}")
+            # Regenerate QR code
+            qr_path = generate_qr_code(table.id, table.table_number, table.qr_token)
+            table.qr_code_path = qr_path
+            print(f"  ✅ Table {table.table_number}: {qr_path}")
         
-    except Exception as e:
-        print(f"Error: {e}")
-        db.rollback()
+        db.commit()
+        print(f"\n🎉 Successfully regenerated {len(tables)} QR codes!")
+        print("   QR codes now use /t/{token} format - domain agnostic!")
+        
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

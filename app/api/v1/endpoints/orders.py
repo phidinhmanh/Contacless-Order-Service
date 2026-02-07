@@ -11,7 +11,7 @@ from app.services.order_service import OrderService
 router = APIRouter()
 
 
-@router.get("/", response_model=list[OrderResponse])
+@router.get("", response_model=list[OrderResponse])
 def get_orders(
     skip: int = 0,
     limit: int = 100,
@@ -42,7 +42,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     return order
 
 
-@router.post("/", response_model=OrderResponse, status_code=201)
+@router.post("", response_model=OrderResponse, status_code=201)
 async def create_order(
     order_in: OrderCreate,
     db: Session = Depends(get_db),
@@ -62,7 +62,8 @@ async def create_order(
         )
 
     order_service = OrderService(db)
-    order = order_service.create_order(order_in)
+    # Pass current authenticated user to the service
+    order = order_service.create_order(order_in, user_id=current_user.id)
     await broadcast_new_order(order)
     return order
 
@@ -118,3 +119,49 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
+
+
+@router.post("/{order_id}/pay-cash", response_model=dict, status_code=201)
+async def pay_cash(
+    order_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Initiate cash payment for an order.
+    This is a convenience endpoint that wraps the payment service.
+    """
+    from app.core.websocket import manager
+    from app.schemas.payment import PaymentCreate, PaymentProvider
+    from app.services.payment_service import PaymentService
+    
+    # Get the order first to retrieve the total_price
+    order = crud_order.get(db, id=order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    payment_service = PaymentService(db)
+    payment_in = PaymentCreate(
+        order_id=order_id, 
+        provider=PaymentProvider.CASH,
+        amount=order.total_price
+    )
+    payment = payment_service.initiate_payment(payment_in)
+    
+    # Notify kitchen about cash payment
+    table_number = order.table.table_number if order.table else "Unknown"
+    message = {
+        "type": "cash_payment_request",
+        "table_number": table_number,
+        "message": f"Bàn {table_number} thanh toán tiền mặt"
+    }
+    background_tasks.add_task(manager.broadcast, message, channel="kitchen")
+    
+    return {
+        "payment_id": payment.id,
+        "order_id": payment.order_id,
+        "status": payment.status,
+        "message": "Cash payment initiated. Please proceed to the counter."
+    }
+

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Clock, RefreshCw, ArrowRight } from 'lucide-react';
@@ -13,7 +13,8 @@ import type { Payment, PaymentStatus } from '@/lib/types';
 // Poll interval in milliseconds
 const POLL_INTERVAL = 3000;
 
-export default function PaymentStatusPage() {
+// 1. Tách logic chính vào component con
+function PaymentStatusContent() {
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
@@ -27,7 +28,6 @@ export default function PaymentStatusPage() {
     const [isPolling, setIsPolling] = useState(!isCashPayment);
     const [error, setError] = useState('');
 
-    // Poll payment status
     const checkStatus = useCallback(async () => {
         if (isCashPayment) return;
 
@@ -36,7 +36,6 @@ export default function PaymentStatusPage() {
             const newStatus = response.data.status;
             setStatus(newStatus);
 
-            // Stop polling on terminal states
             if (newStatus === 'completed' || newStatus === 'failed' || newStatus === 'expired') {
                 setIsPolling(false);
             }
@@ -47,52 +46,30 @@ export default function PaymentStatusPage() {
 
     useEffect(() => {
         if (!isPolling) return;
-
         const interval = setInterval(checkStatus, POLL_INTERVAL);
         return () => clearInterval(interval);
     }, [isPolling, checkStatus]);
 
-    // Initial check
     useEffect(() => {
         if (!isCashPayment) {
             checkStatus();
         }
     }, [checkStatus, isCashPayment]);
 
-    // Handle retry payment
-    const handleRetry = () => {
-        router.back();
-    };
+    const handleRetry = () => router.back();
+    const handleViewOrder = () => router.push(`/tracking/${transactionId}`);
+    const handleBackToMenu = () => router.push('/menu');
 
-    // Navigate to order tracking
-    const handleViewOrder = () => {
-        router.push(`/tracking/${transactionId}`);
-    };
-
-    // Navigate to menu
-    const handleBackToMenu = () => {
-        router.push('/menu');
-    };
-
-    // Render based on status
     const renderContent = () => {
         switch (status) {
             case 'pending':
                 return (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center"
-                    >
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center">
                         <div className="w-20 h-20 rounded-full bg-primary-500/20 flex items-center justify-center mb-6">
                             <Spinner size="lg" />
                         </div>
-                        <h1 className="text-xl font-bold text-text-primary mb-2">
-                            Đang chờ xác nhận...
-                        </h1>
-                        <p className="text-text-secondary text-center max-w-xs">
-                            Vui lòng hoàn tất thanh toán trên ứng dụng ngân hàng/ví điện tử
-                        </p>
+                        <h1 className="text-xl font-bold text-text-primary mb-2">Đang chờ xác nhận...</h1>
+                        <p className="text-text-secondary text-center max-w-xs">Vui lòng hoàn tất thanh toán trên ứng dụng ngân hàng/ví điện tử</p>
                         <div className="mt-6 flex items-center gap-2 text-text-muted text-sm">
                             <Clock size={16} />
                             <span>Đang kiểm tra trạng thái...</span>
@@ -102,153 +79,47 @@ export default function PaymentStatusPage() {
 
             case 'completed':
                 return (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center"
-                    >
-                        {/* Confetti Effect */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            {[...Array(20)].map((_, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{
-                                        x: Math.random() * window.innerWidth,
-                                        y: window.innerHeight + 100,
-                                        rotate: 0,
-                                    }}
-                                    animate={{
-                                        y: -100,
-                                        rotate: 720,
-                                    }}
-                                    transition={{
-                                        duration: 2 + Math.random() * 2,
-                                        delay: Math.random() * 0.5,
-                                        repeat: Infinity,
-                                    }}
-                                    className={cn(
-                                        'absolute w-3 h-3 rounded-sm',
-                                        i % 3 === 0
-                                            ? 'bg-primary-500'
-                                            : i % 3 === 1
-                                                ? 'bg-secondary-500'
-                                                : 'bg-yellow-500'
-                                    )}
-                                />
-                            ))}
-                        </div>
-
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', delay: 0.2 }}
-                            className="w-24 h-24 rounded-full bg-secondary-500/20 flex items-center justify-center mb-6"
-                        >
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center">
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="w-24 h-24 rounded-full bg-secondary-500/20 flex items-center justify-center mb-6">
                             <CheckCircle className="text-secondary-400" size={48} />
                         </motion.div>
-
                         <h1 className="text-2xl font-bold text-text-primary mb-2">
                             {isCashPayment ? 'Đặt món thành công!' : 'Thanh toán thành công!'}
                         </h1>
                         <p className="text-text-secondary text-center max-w-xs mb-8">
-                            {isCashPayment
-                                ? 'Vui lòng thanh toán tại quầy khi nhận món'
-                                : 'Đơn hàng của bạn đã được xác nhận'}
+                            {isCashPayment ? 'Vui lòng thanh toán tại quầy khi nhận món' : 'Đơn hàng của bạn đã được xác nhận'}
                         </p>
-
                         <div className="w-full max-w-xs space-y-3">
                             <Button onClick={handleViewOrder} className="w-full" size="lg">
-                                Theo dõi đơn hàng
-                                <ArrowRight size={18} className="ml-2" />
+                                Theo dõi đơn hàng <ArrowRight size={18} className="ml-2" />
                             </Button>
-                            <Button
-                                onClick={handleBackToMenu}
-                                variant="ghost"
-                                className="w-full"
-                            >
-                                Quay lại thực đơn
-                            </Button>
+                            <Button onClick={handleBackToMenu} variant="ghost" className="w-full">Quay lại thực đơn</Button>
                         </div>
                     </motion.div>
                 );
 
             case 'failed':
-                return (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center"
-                    >
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', delay: 0.2 }}
-                            className="w-24 h-24 rounded-full bg-red-500/20 flex items-center justify-center mb-6"
-                        >
-                            <XCircle className="text-red-400" size={48} />
-                        </motion.div>
-
-                        <h1 className="text-2xl font-bold text-text-primary mb-2">
-                            Thanh toán thất bại
-                        </h1>
-                        <p className="text-text-secondary text-center max-w-xs mb-8">
-                            {error || 'Đã có lỗi xảy ra. Vui lòng thử lại.'}
-                        </p>
-
-                        <div className="w-full max-w-xs space-y-3">
-                            <Button onClick={handleRetry} className="w-full" size="lg">
-                                <RefreshCw size={18} className="mr-2" />
-                                Thử lại
-                            </Button>
-                            <Button
-                                onClick={handleBackToMenu}
-                                variant="ghost"
-                                className="w-full"
-                            >
-                                Quay lại thực đơn
-                            </Button>
-                        </div>
-                    </motion.div>
-                );
-
             case 'expired':
+                const isExpired = status === 'expired';
                 return (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center"
-                    >
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', delay: 0.2 }}
-                            className="w-24 h-24 rounded-full bg-yellow-500/20 flex items-center justify-center mb-6"
-                        >
-                            <Clock className="text-yellow-400" size={48} />
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center">
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className={cn("w-24 h-24 rounded-full flex items-center justify-center mb-6", isExpired ? "bg-yellow-500/20" : "bg-red-500/20")}>
+                            {isExpired ? <Clock className="text-yellow-400" size={48} /> : <XCircle className="text-red-400" size={48} />}
                         </motion.div>
-
                         <h1 className="text-2xl font-bold text-text-primary mb-2">
-                            Hết thời gian thanh toán
+                            {isExpired ? 'Hết thời gian thanh toán' : 'Thanh toán thất bại'}
                         </h1>
                         <p className="text-text-secondary text-center max-w-xs mb-8">
-                            Thời gian thanh toán đã hết. Vui lòng tạo thanh toán mới.
+                            {isExpired ? 'Thời gian thanh toán đã hết. Vui lòng tạo thanh toán mới.' : (error || 'Đã có lỗi xảy ra. Vui lòng thử lại.')}
                         </p>
-
                         <div className="w-full max-w-xs space-y-3">
                             <Button onClick={handleRetry} className="w-full" size="lg">
-                                Thanh toán lại
+                                <RefreshCw size={18} className="mr-2" /> {isExpired ? 'Thanh toán lại' : 'Thử lại'}
                             </Button>
-                            <Button
-                                onClick={handleBackToMenu}
-                                variant="ghost"
-                                className="w-full"
-                            >
-                                Quay lại thực đơn
-                            </Button>
+                            <Button onClick={handleBackToMenu} variant="ghost" className="w-full">Quay lại thực đơn</Button>
                         </div>
                     </motion.div>
                 );
-
             default:
                 return null;
         }
@@ -258,5 +129,18 @@ export default function PaymentStatusPage() {
         <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center p-6 relative">
             {renderContent()}
         </div>
+    );
+}
+
+// 2. Export mặc định bọc Suspense để vượt qua bước build của Next.js
+export default function PaymentStatusPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+                <Spinner size="lg" />
+            </div>
+        }>
+            <PaymentStatusContent />
+        </Suspense>
     );
 }

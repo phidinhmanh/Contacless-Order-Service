@@ -17,6 +17,7 @@ class TableUpdate(BaseModel):
     table_number: int | None = None
     capacity: int | None = Field(default=None, ge=1, le=20)
     is_occupied: bool | None = None
+    qr_token: str | None = None
 
 
 class TableResponse(TableBase):
@@ -24,6 +25,6 @@ class TableResponse(TableBase):
     id: int
     is_occupied: bool = False
     qr_code_path: str | None = None
+    qr_token: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
-

@@ -24,7 +24,9 @@ function getCategoryId(category: CategoryItem): string {
     if (typeof category === 'string') {
         return category;
     }
-    return String(category.id ?? category.name ?? '');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const obj = category as any;
+    return String(obj.id ?? obj.name ?? '');
 }
 
 export function CategoryTabs({

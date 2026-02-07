@@ -12,7 +12,8 @@ import {
     Menu,
     X,
     LogOut,
-    Package
+    Package,
+    Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
@@ -21,6 +22,7 @@ import { useAdminAudio } from '@/hooks/useAdminAudio';
 const navItems = [
     { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'Đơn hàng', icon: ClipboardList },
+    { href: '/admin/categories', label: 'Danh mục', icon: Layers },
     { href: '/admin/foods', label: 'Quản lý món', icon: Package },
     { href: '/admin/analytics', label: 'Thống kê', icon: BarChart3 },
     { href: '/admin/tables', label: 'Quản lý bàn', icon: UtensilsCrossed },

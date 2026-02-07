@@ -75,15 +75,16 @@ def login(
     
     # Find user by phone number
     user = crud_user.get_by_phone(db, phone_number=username)
-    
     if not user or not user.hashed_password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect phone number or password",
+            detail="User not found or password not set",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not verify_password(form_data.password, user.hashed_password):
+        print(hash_password(form_data.password), flush=True)
+        print(user.hashed_password, flush=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect phone number or password",

@@ -1,18 +1,24 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.6
+    rev: v0.15.0  # Updated to latest stable
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
-  
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+
+  - repo: https://github.com/python/mypy
+    rev: v1.14.1  # Official repo is more stable than mirrors
     hooks:
       - id: mypy
-        additional_dependencies: [types-all]
-  
+        additional_dependencies:
+          - types-pytz
+          - types-requests
+          - types-PyYAML
+          - sqlalchemy[mypy]
+          - pydantic
+
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
+    rev: 1.9.3  # Updated version
     hooks:
       - id: bandit
-        args: ['-c', 'pyproject.toml']
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]

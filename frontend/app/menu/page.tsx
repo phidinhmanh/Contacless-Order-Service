@@ -18,6 +18,7 @@ import type { CreateOrderRequest } from '@/lib/types';
 
 export default function MenuPage() {
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
     const { items, tableId, getItemCount, specialInstructions, clearCart } = useCartStore();
     const itemCount = getItemCount();
 
@@ -46,6 +47,10 @@ export default function MenuPage() {
         if (menuError) setError(menuError);
     }, [menuError]);
 
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     // Filter foods by category and search
     const filteredFoods = useMemo(() => {
         let result = foods;
@@ -53,9 +58,8 @@ export default function MenuPage() {
         // Filter by category (handle both category_id and category as field names)
         if (activeCategory) {
             result = result.filter((food) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const f = food as unknown as Record<string, any>;
-                return f.category_id === activeCategory || f.category === activeCategory;
+                const foodCategoryId = food.category_id ? String(food.category_id) : null;
+                return foodCategoryId === activeCategory;
             });
         }
 
@@ -104,6 +108,15 @@ export default function MenuPage() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <LoadingState message="Đang tải thực đơn..." />
+            </div>
+        );
+    }
+
+    if (!mounted) {
+        return (
+            <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+                {/* Return a simple skeleton or loading state that matches SSR */}
+                <div className="animate-pulse bg-dark-card w-12 h-12 rounded-full" />
             </div>
         );
     }

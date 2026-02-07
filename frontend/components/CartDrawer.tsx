@@ -8,7 +8,7 @@ import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/Button';
 import { Textarea, Input } from '@/components/ui/Input'; // Assuming Input exists or Textarea usage
 import api from '@/lib/api';
-import { updateLeadGuestInfo, createTableSession, getTableIdFromUrl } from '@/lib/auth';
+import { createTableSession, getTableIdFromUrl } from '@/lib/auth';
 
 interface CartDrawerProps {
     isOpen: boolean;
@@ -37,10 +37,6 @@ export function CartDrawer({
 
     const [userInfo, setUserInfo] = useState<{ full_name?: string; phone_number?: string } | null>(null);
     const [showGuestCountStep, setShowGuestCountStep] = useState(false);
-    const [showLeadForm, setShowLeadForm] = useState(false);
-    const [leadName, setLeadName] = useState('');
-    const [leadPhone, setLeadPhone] = useState('');
-    const [isSubmittingInfo, setIsSubmittingInfo] = useState(false);
 
     const total = getTotal();
     const isEmpty = items.length === 0;
@@ -51,9 +47,6 @@ export function CartDrawer({
             api.get('/users/me')
                 .then(res => {
                     setUserInfo(res.data);
-                    // Pre-fill if exists
-                    if (res.data.full_name) setLeadName(res.data.full_name);
-                    if (res.data.phone_number) setLeadPhone(res.data.phone_number);
                 })
                 .catch(() => {
                     // Ignore auth errors (guest)
@@ -65,11 +58,6 @@ export function CartDrawer({
         // Step 1: Check if guest count is set
         if (!guestCount) {
             setShowGuestCountStep(true);
-            return;
-        }
-        // Step 2: Check if phone number is available
-        if (!userInfo?.phone_number) {
-            setShowLeadForm(true);
             return;
         }
         onCheckout();
@@ -92,30 +80,7 @@ export function CartDrawer({
         }
 
         setShowGuestCountStep(false);
-
-        // Continue to check phone number
-        if (!userInfo?.phone_number) {
-            setShowLeadForm(true);
-            return;
-        }
         onCheckout();
-    };
-
-    const handleLeadInfoSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmittingInfo(true);
-        try {
-            await updateLeadGuestInfo(leadName, leadPhone);
-            // Update local state
-            setUserInfo({ ...userInfo, full_name: leadName, phone_number: leadPhone });
-            setShowLeadForm(false);
-            onCheckout();
-        } catch (error) {
-            console.error(error);
-            // Show error toast?
-        } finally {
-            setIsSubmittingInfo(false);
-        }
     };
 
     return (
@@ -208,62 +173,6 @@ export function CartDrawer({
                                         ← Quay lại
                                     </button>
                                 </div>
-                            ) : showLeadForm ? (
-                                <form onSubmit={handleLeadInfoSubmit} className="space-y-4">
-                                    <div className="bg-primary-500/10 p-4 rounded-xl border border-primary-500/20 mb-4">
-                                        <h3 className="text-primary-400 font-medium mb-1">Thông tin người đặt (Lead Guest)</h3>
-                                        <p className="text-text-muted text-sm">Vui lòng cung cấp thông tin để chúng tôi phục vụ tốt hơn.</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-text-secondary mb-1">Họ và tên</label>
-                                        <div className="relative">
-                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full bg-dark-bg border border-dark-border rounded-xl py-3 pl-10 pr-4 text-text-primary focus:border-primary-500 focus:outline-none transition-colors"
-                                                placeholder="Nguyễn Văn A"
-                                                value={leadName}
-                                                onChange={(e) => setLeadName(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-text-secondary mb-1">Số điện thoại</label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
-                                            <input
-                                                type="tel"
-                                                required
-                                                pattern="[0-9]{10}"
-                                                className="w-full bg-dark-bg border border-dark-border rounded-xl py-3 pl-10 pr-4 text-text-primary focus:border-primary-500 focus:outline-none transition-colors"
-                                                placeholder="0912345678"
-                                                value={leadPhone}
-                                                onChange={(e) => setLeadPhone(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-4">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="flex-1"
-                                            onClick={() => setShowLeadForm(false)}
-                                        >
-                                            Quay lại
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            className="flex-1"
-                                            isLoading={isSubmittingInfo}
-                                        >
-                                            Xác nhận
-                                        </Button>
-                                    </div>
-                                </form>
                             ) : (
                                 <>
                                     {/* Cart Items */}
@@ -343,7 +252,7 @@ export function CartDrawer({
                         </div>
 
                         {/* Footer */}
-                        {!showLeadForm && !showGuestCountStep && (
+                        {!showGuestCountStep && (
                             <div className="p-4 border-t border-dark-border bg-dark-bg/50 backdrop-blur">
                                 <div className="flex items-center justify-between mb-4">
                                     <span className="text-text-secondary">Tổng cộng</span>

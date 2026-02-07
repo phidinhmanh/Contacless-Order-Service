@@ -1,14 +1,15 @@
 """
 Table management endpoints.
 Managers can CRUD tables with automatic QR code generation.
+Uses qr_token for domain-agnostic QR codes that survive domain changes.
 """
 import io
 import os
+import secrets
 from typing import Annotated
-
 import qrcode
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, require_role
@@ -16,10 +17,12 @@ from app.core.config import settings
 from app.core.websocket import manager
 from app.crud import crud_table
 from app.models.user import User, UserRole
+from app.models.table import Table
 from app.schemas.table import TableCreate, TableResponse, TableUpdate
 from app.schemas.table_session import TableSessionCreate, TableSessionResponse, TableSessionUpdate
 from app.models.table_session import TableSession
 from app.models.order import Order
+from app.api.deps import get_current_user
 
 
 router = APIRouter()
@@ -28,16 +31,26 @@ router = APIRouter()
 QR_CODE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "static", "qr_codes")
 
 
-def generate_qr_code(table_id: int, table_number: int, base_url: str) -> str:
+def generate_qr_token() -> str:
+    """Generate a secure, URL-safe token for QR codes."""
+    return secrets.token_urlsafe(16)
+
+
+def generate_qr_code(table_id: int, table_number: int, qr_token: str) -> str:
     """
-    Generate QR code for a table and save to disk.
-    Returns the path to the saved QR code.
+    Generate QR code for a table using a TOKEN-BASED URL.
+    
+    This makes QR codes DOMAIN-AGNOSTIC:
+    - QR encodes: /t/{qr_token}
+    - Frontend resolves the actual menu URL at runtime
+    - Domain can change without reprinting QR codes
     """
     # Ensure directory exists
     os.makedirs(QR_CODE_DIR, exist_ok=True)
     
-    # Generate URL for the table
-    table_url = f"{base_url}/?table={table_id}"
+    # Use relative path with token - DOMAIN AGNOSTIC!
+    # The frontend will handle: /t/{token} -> redirect to /?table={id}
+    table_url = f"/t/{qr_token}"
     
     # Create QR code
     qr = qrcode.QRCode(
@@ -60,7 +73,35 @@ def generate_qr_code(table_id: int, table_number: int, base_url: str) -> str:
     return f"/static/qr_codes/{filename}"
 
 
-@router.get("/", response_model=list[TableResponse])
+@router.get("/t/{qr_token}")
+def resolve_qr_token(qr_token: str, db: Session = Depends(get_db)):
+    """
+    Resolve a QR token to the actual table.
+    This is the SECRET SAUCE for domain-agnostic QR codes!
+    
+    Flow:
+    1. Customer scans QR -> gets /t/abc123
+    2. Browser requests https://current-domain.com/t/abc123
+    3. This endpoint looks up the token -> redirects to /?table=5
+    
+    Benefits:
+    - Domain can change, QR codes still work
+    - Token can be rotated for security
+    - Analytics tracking possible
+    """
+    table = db.query(Table).filter(
+        Table.qr_token == qr_token,
+        Table.deleted_at == None
+    ).first()
+    
+    if not table:
+        raise HTTPException(status_code=404, detail="Invalid or expired QR code")
+    
+    # Redirect to menu with table pre-selected
+    return RedirectResponse(url=f"/?table={table.id}", status_code=302)
+
+
+@router.get("", response_model=list[TableResponse])
 def get_tables(
     skip: int = 0,
     limit: int = 100,
@@ -75,7 +116,7 @@ def create_table_session(
     table_id: int,
     session_in: TableSessionCreate,
     db: Session = Depends(get_db),
-    # Optional: require guest user? For now open to guests via public API
+    current_user: User | None = Depends(get_current_user),
 ):
     """
     Create or join a session for the table.
@@ -94,17 +135,14 @@ def create_table_session(
     ).first()
 
     if active_session:
-        # Optionally update guest count if provided and different?
-        # For simplicity, just return existing
+        # If no lead user currently, or if same user, return.
+        # This keeps the session logic simple.
         return active_session
     
-    # Create new session
-    # Note: lead_user_id logic to be handled by finding current user if auth token present,
-    # but for now we just create the session structure.
-    # The frontend will likely pass the guest count.
-    
+    # Create new session linked to user if available
     new_session = TableSession(
         table_id=table_id,
+        lead_user_id=current_user.id if current_user else None,
         guest_count=session_in.guest_count,
         status="active"
     )
@@ -148,7 +186,6 @@ def create_table(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     _: User = Depends(require_role(UserRole.MANAGER, UserRole.ADMIN)),
-    base_url: str = Query(settings.FRONTEND_URL, description="Base URL for QR code"),
 ):
     """
     Create a new table with automatic QR code generation.
@@ -162,10 +199,11 @@ def create_table(
     # Create the table first
     table = crud_table.create(db, obj_in=table_in)
     
-    # Generate QR code
+    # Generate QR token and code
     try:
-        qr_path = generate_qr_code(table.id, table.table_number, base_url)
-        # Update table with QR path
+        qr_token = generate_qr_token()
+        table.qr_token = qr_token
+        qr_path = generate_qr_code(table.id, table.table_number, qr_token)
         table.qr_code_path = qr_path
         db.commit()
         db.refresh(table)
@@ -206,8 +244,10 @@ def update_table(
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
-            # Generate new QR
-            qr_path = generate_qr_code(updated_table.id, updated_table.table_number, settings.FRONTEND_URL)
+            # Keep existing token but regenerate image with new table number
+            if not updated_table.qr_token:
+                updated_table.qr_token = generate_qr_token()
+            qr_path = generate_qr_code(updated_table.id, updated_table.table_number, updated_table.qr_token)
             updated_table.qr_code_path = qr_path
             db.commit()
             db.refresh(updated_table)
@@ -251,18 +291,22 @@ def delete_table(
 @router.get("/{table_id}/qr")
 def get_table_qr(
     table_id: int,
-    base_url: str = Query(settings.FRONTEND_URL, description="Base URL for menu"),
     db: Session = Depends(get_db),
 ):
     """
     Get or generate a QR code for a specific table.
-    The QR encodes a URL like: http://localhost:3000/?table=5
+    The QR encodes a TOKEN path like: /t/abc123
     Returns the QR code as a PNG image.
     """
     # Verify table exists
     table = crud_table.get(db, id=table_id)
     if not table:
         raise HTTPException(status_code=404, detail="Table not found")
+
+    # Ensure table has a token
+    if not table.qr_token:
+        table.qr_token = generate_qr_token()
+        db.commit()
 
     # If QR exists on disk, return it
     if table.qr_code_path:
@@ -277,7 +321,7 @@ def get_table_qr(
                 )
     
     # Generate new QR if not exists
-    qr_path = generate_qr_code(table.id, table.table_number, base_url)
+    qr_path = generate_qr_code(table.id, table.table_number, table.qr_token)
     table.qr_code_path = qr_path
     db.commit()
     
@@ -292,15 +336,15 @@ def get_table_qr(
         )
 
 
-@router.post("/{table_id}/regenerate-qr", response_model=TableResponse)
-def regenerate_table_qr(
+@router.post("/{table_id}/rotate-token", response_model=TableResponse)
+def rotate_table_token(
     table_id: int,
-    base_url: str = Query(settings.FRONTEND_URL, description="Base URL for menu"),
     db: Session = Depends(get_db),
     _: User = Depends(require_role(UserRole.MANAGER, UserRole.ADMIN)),
 ):
     """
-    Regenerate QR code for a table (e.g., if base URL changed).
+    Rotate the QR token for security (invalidates old QR codes).
+    Use this if you suspect a QR code was leaked or for periodic security rotation.
     Requires MANAGER or ADMIN role.
     """
     table = crud_table.get(db, id=table_id)
@@ -317,8 +361,48 @@ def regenerate_table_qr(
         except Exception:
             pass
     
-    # Generate new QR
-    qr_path = generate_qr_code(table.id, table.table_number, base_url)
+    # Generate new token and QR
+    new_token = generate_qr_token()
+    table.qr_token = new_token
+    qr_path = generate_qr_code(table.id, table.table_number, new_token)
+    table.qr_code_path = qr_path
+    db.commit()
+    db.refresh(table)
+    
+    return table
+
+
+@router.post("/{table_id}/regenerate-qr", response_model=TableResponse)
+def regenerate_table_qr(
+    table_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role(UserRole.MANAGER, UserRole.ADMIN)),
+):
+    """
+    Regenerate QR code image (keeps same token).
+    Use this if QR image file was corrupted or deleted.
+    Requires MANAGER or ADMIN role.
+    """
+    table = crud_table.get(db, id=table_id)
+    if not table:
+        raise HTTPException(status_code=404, detail="Table not found")
+    
+    # Delete old QR if exists
+    if table.qr_code_path:
+        try:
+            filepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 
+                                   table.qr_code_path.lstrip('/'))
+            if os.path.exists(filepath):
+                os.remove(filepath)
+        except Exception:
+            pass
+    
+    # Ensure token exists
+    if not table.qr_token:
+        table.qr_token = generate_qr_token()
+    
+    # Generate new QR with existing token
+    qr_path = generate_qr_code(table.id, table.table_number, table.qr_token)
     table.qr_code_path = qr_path
     db.commit()
     db.refresh(table)
