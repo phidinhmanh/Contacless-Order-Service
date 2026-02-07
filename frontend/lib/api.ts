@@ -2,8 +2,27 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'ax
 import { getToken, removeToken } from './auth';
 import { errorLogger, createApiErrorFromAxios } from './errorLogger';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const getApiBaseUrl = () => {
+    // If explicitly set in environment, use it
+    if (process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL;
+    }
 
+    // In browser (client-side), use relative URL
+    if (typeof window !== 'undefined') {
+        // Check if we're on localhost for development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:8000';
+        }
+        // Otherwise use relative URL (same domain as frontend)
+        return '';
+    }
+
+    // Server-side rendering fallback
+    return 'http://backend:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 // Extract error message from various API error formats
 function extractErrorMessage(data: unknown): string {
     // Handle null/undefined

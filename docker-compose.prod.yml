@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile
     container_name: ${APP_NAME:-contacless}_frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=
     depends_on:
       backend:
         condition: service_healthy
