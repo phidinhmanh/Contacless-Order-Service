@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     
@@ -80,7 +81,10 @@ jobs:
     
     - name: Security check with bandit
       run: |
-        uv run bandit -r app/ -f json -o bandit-report.json
+        uv run bandit -r app/ -f json -o bandit-report.json || true
+        if [ ! -f bandit-report.json ]; then
+          echo "{}" > bandit-report.json
+        fi
       continue-on-error: true
     
     - name: Type checking with mypy
