@@ -27,7 +27,7 @@ echo "================================================"
 # --- 2. INSTALL SYSTEM DEPENDENCIES ---
 echo "📦 Installing system dependencies..."
 apt-get update -qq
-apt-get install -y -qq git curl openssl python3 python3-pip python3-venv
+apt-get install -y -qq git curl openssl python3 python3-pip python3-venv postgresql-client
 
 # --- 3. INSTALL UV (ASTRAL PACKAGE MANAGER) ---
 if ! command -v uv &> /dev/null; then
@@ -93,23 +93,60 @@ if [ ! -f .env ]; then
     cat > .env <<EOF
 APP_NAME=${APP_NAME}
 SECRET_KEY=$(openssl rand -hex 32)
+DATABASE_URL=postgresql://postgres:postgres@db:5432/contacless_order
 VIETQR_BANK_ID=
 VIETQR_ACCOUNT_NO=
 VIETQR_ACCOUNT_NAME=
 EOF
     echo "✅ .env file created"
+else
+    # Ensure DATABASE_URL exists in existing .env
+    if ! grep -q "DATABASE_URL=" .env; then
+        echo "DATABASE_URL=postgresql://postgres:postgres@db:5432/contacless_order" >> .env
+        echo "✅ DATABASE_URL added to existing .env"
+    fi
 fi
 
-# --- 8. BUILD & DEPLOY ---
+# --- 8. BUILD & DEPLOY CONTAINERS ---
 echo ""
 echo "🏗️ Building and launching production containers..."
-# Use the official docker-compose.prod.yml in the repo
 docker compose -f docker-compose.prod.yml up -d --build
 
-# --- 9. HEALTH CHECK ---
+# --- 9. WAIT FOR DATABASE ---
+echo ""
+echo "⏳ Waiting for PostgreSQL database to be ready..."
+MAX_RETRIES=30
+RETRY_COUNT=0
+
+until docker compose -f docker-compose.prod.yml exec -T db pg_isready -U postgres > /dev/null 2>&1; do
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+        echo "❌ Database failed to start after ${MAX_RETRIES} attempts"
+        exit 1
+    fi
+    echo "   Waiting for database... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+    sleep 2
+done
+
+echo "✅ PostgreSQL database is ready"
+
+# --- 10. RUN DATABASE MIGRATIONS ---
+echo ""
+echo "🔄 Running Alembic database migrations..."
+
+# Run migrations inside the backend container
+if docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head; then
+    echo "✅ Database migrations completed successfully"
+else
+    echo "❌ Database migration failed"
+    echo "   Check logs with: docker compose -f docker-compose.prod.yml logs backend"
+    exit 1
+fi
+
+# --- 11. HEALTH CHECK ---
 echo ""
 echo "⏳ Waiting for services to become healthy..."
-sleep 15
+sleep 10
 
 # Check backend health
 if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
@@ -125,7 +162,7 @@ else
     echo "⚠️ Frontend health check pending (may still be starting)"
 fi
 
-# --- 10. OUTPUT RESULTS ---
+# --- 12. OUTPUT RESULTS ---
 echo ""
 echo "================================================"
 echo "✅ DEPLOYMENT COMPLETE"
@@ -136,9 +173,12 @@ echo "   Frontend: http://localhost"
 echo "   API Docs: http://localhost/api/docs"
 echo ""
 echo "📊 Useful Commands:"
-echo "   View logs:    docker compose -f docker-compose.prod.yml logs -f"
-echo "   Stop:         docker compose -f docker-compose.prod.yml down"
-echo "   Restart:      docker compose -f docker-compose.prod.yml restart"
+echo "   View logs:       docker compose -f docker-compose.prod.yml logs -f"
+echo "   Backend logs:    docker compose -f docker-compose.prod.yml logs -f backend"
+echo "   Database logs:   docker compose -f docker-compose.prod.yml logs -f db"
+echo "   Stop:            docker compose -f docker-compose.prod.yml down"
+echo "   Restart:         docker compose -f docker-compose.prod.yml restart"
+echo "   Run migrations:  docker compose -f docker-compose.prod.yml exec backend alembic upgrade head"
 echo ""
 echo "🔐 To enable public HTTPS access via Cloudflare Tunnel:"
 echo "   1. Edit docker-compose.prod.yml"

@@ -9,7 +9,7 @@ services:
     container_name: ${APP_NAME:-contacless}_backend
     environment:
       - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=sqlite:///./restaurant.db
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/contacless_order
       - VIETQR_BANK_ID=${VIETQR_BANK_ID:-}
       - VIETQR_ACCOUNT_NO=${VIETQR_ACCOUNT_NO:-}
       - VIETQR_ACCOUNT_NAME=${VIETQR_ACCOUNT_NAME:-}
