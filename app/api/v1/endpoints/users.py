@@ -62,13 +62,12 @@ def get_user(
     current_user: User = Depends(get_current_user),
 ):
     """Get a specific user by ID. Users can only view their own profile unless admin."""
+    if current_user.id != user_id and current_user.role not in [UserRole.ADMIN.value, UserRole.MANAGER.value]:
+        raise HTTPException(status_code=403, detail="Not authorized to view this user")
+
     user = crud_user.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    # Users can only view their own profile unless they're admin/manager
-    if current_user.id != user_id and current_user.role not in [UserRole.ADMIN.value, UserRole.MANAGER.value]:
-        raise HTTPException(status_code=403, detail="Not authorized to view this user")
 
     return user
 
@@ -81,13 +80,12 @@ def update_user(
     current_user: User = Depends(get_current_user),
 ):
     """Update an existing user. Users can only update their own profile unless admin."""
+    if current_user.id != user_id and current_user.role != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Not authorized to update this user")
+
     user = crud_user.get(db, id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    # Users can only update their own profile unless they're admin
-    if current_user.id != user_id and current_user.role != UserRole.ADMIN.value:
-        raise HTTPException(status_code=403, detail="Not authorized to update this user")
 
     return crud_user.update(db, db_obj=user, obj_in=user_in)
 

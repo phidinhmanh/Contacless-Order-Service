@@ -14,12 +14,29 @@ FRONTEND_PORT=3000
 BACKEND_PORT=8000
 GITHUB_REPO="https://github.com/phidinhmanh/Contacless-Order-Service.git"
 DEPLOY_DIR="/opt/contacless-order"
-POSTGRES_USER="postgres"
-POSTGRES_PASSWORD="postgres"
-POSTGRES_DB="contacless_order"
+POSTGRES_USER_DEFAULT="postgres"
+POSTGRES_PASSWORD_DEFAULT="postgres"
+POSTGRES_DB_DEFAULT="contacless_order"
+DRY_RUN="${DRY_RUN:-0}"
+
+run_cmd() {
+    if [[ "${DRY_RUN}" == "1" ]]; then
+        echo "🧪 DRY RUN: $*"
+        return 0
+    fi
+    "$@"
+}
+
+run_cmd_eval() {
+    if [[ "${DRY_RUN}" == "1" ]]; then
+        echo "🧪 DRY RUN: $*"
+        return 0
+    fi
+    eval "$@"
+}
 
 # --- 1. SCRIPT PRE-CHECKS ---
-if [[ $EUID -ne 0 ]]; then
+if [[ $EUID -ne 0 && "${DRY_RUN}" != "1" ]]; then
    echo "❌ This script must be run as root (use sudo)"
    exit 1
 fi
@@ -29,15 +46,17 @@ echo "================================================"
 
 # --- 2. INSTALL SYSTEM DEPENDENCIES ---
 echo "📦 Installing system dependencies..."
-apt-get update -qq
-apt-get install -y -qq git curl openssl python3 python3-pip python3-venv postgresql-client
+run_cmd apt-get update -qq
+run_cmd apt-get install -y -qq git curl openssl python3 python3-pip python3-venv
 
 # --- 3. INSTALL UV (ASTRAL PACKAGE MANAGER) ---
 if ! command -v uv &> /dev/null; then
     echo "📦 Installing uv (Astral package manager)..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.cargo/bin:$PATH"
-    echo "✅ uv installed successfully."
+    run_cmd_eval "curl -LsSf https://astral.sh/uv/install.sh | sh"
+    if [[ "${DRY_RUN}" != "1" ]]; then
+        export PATH="$HOME/.cargo/bin:$PATH"
+    fi
+    echo "✅ uv install step completed."
 else
     echo "✅ uv is already installed ($(uv --version))"
 fi
@@ -45,11 +64,11 @@ fi
 # --- 4. AUTO-INSTALL DOCKER (IDEMPOTENT) ---
 if ! command -v docker &> /dev/null; then
     echo "📦 Docker not found. Installing now..."
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
-    rm get-docker.sh
-    systemctl enable --now docker
-    echo "✅ Docker installed successfully."
+    run_cmd curl -fsSL https://get.docker.com -o get-docker.sh
+    run_cmd sh get-docker.sh
+    run_cmd rm get-docker.sh
+    run_cmd systemctl enable --now docker
+    echo "✅ Docker install step completed."
 else
     echo "✅ Docker is already installed ($(docker --version))"
 fi
@@ -57,8 +76,8 @@ fi
 # Ensure Docker Compose plugin is present
 if ! docker compose version &> /dev/null; then
     echo "📦 Docker Compose plugin missing. Installing..."
-    apt-get install -y -qq docker-compose-plugin
-    echo "✅ Docker Compose plugin installed."
+    run_cmd apt-get install -y -qq docker-compose-plugin
+    echo "✅ Docker Compose plugin install step completed."
 else
     echo "✅ Docker Compose already available"
 fi
@@ -69,90 +88,84 @@ echo "🔄 Setting up code from GitHub..."
 # Clone if the directory doesn't exist, otherwise sync
 if [ ! -d "$DEPLOY_DIR" ]; then
     echo "📥 Cloning repository to $DEPLOY_DIR..."
-    git clone "$GITHUB_REPO" "$DEPLOY_DIR"
-    cd "$DEPLOY_DIR"
+    run_cmd git clone "$GITHUB_REPO" "$DEPLOY_DIR"
+    if [[ "${DRY_RUN}" != "1" ]]; then
+        cd "$DEPLOY_DIR"
+    fi
 else
-    cd "$DEPLOY_DIR"
-    git fetch origin
+    if [[ "${DRY_RUN}" != "1" ]]; then
+        cd "$DEPLOY_DIR"
+    fi
+    run_cmd git fetch origin
     
     # Check if we are already on release branch
     CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if [ "$CURRENT_BRANCH" != "release" ]; then
         echo "🔀 Switching from $CURRENT_BRANCH to release..."
-        git checkout release
+        run_cmd git checkout release
     fi
     
     echo "📥 Pulling latest changes..."
-    git pull origin release
+    run_cmd git pull origin release
 fi
 echo "✅ Code sync complete."
 
 # --- 6. ENSURE CONFIG DIRECTORIES ---
-echo "📁 Creating necessary directories..."
-mkdir -p nginx data static/images/foods static/qr_codes postgres_data
-echo "✅ Directories created"
+run_cmd mkdir -p nginx data static/images/foods static/qr_codes
 
-# --- 7. VERIFY DOCKER-COMPOSE FILE EXISTS ---
-if [ ! -f "docker-compose.prod.yml" ]; then
-    echo "❌ docker-compose.prod.yml not found in $DEPLOY_DIR"
-    echo "   Please ensure the file exists in your repository"
-    exit 1
-fi
-
-# --- 8. CREATE/UPDATE .env FILE ---
-if [ ! -f .env ]; then
+# --- 7. CREATE .env FILE (IF MISSING) ---
+if [ ! -f .env ] && [[ "${DRY_RUN}" != "1" ]]; then
     echo "📝 Creating bootstrap .env file..."
     cat > .env <<EOF
 APP_NAME=${APP_NAME}
 SECRET_KEY=$(openssl rand -hex 32)
-DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-POSTGRES_USER=${POSTGRES_USER}
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-POSTGRES_DB=${POSTGRES_DB}
+POSTGRES_USER=${POSTGRES_USER_DEFAULT}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD_DEFAULT}
+POSTGRES_DB=${POSTGRES_DB_DEFAULT}
+DATABASE_URL=postgresql://${POSTGRES_USER_DEFAULT}:${POSTGRES_PASSWORD_DEFAULT}@db:5432/${POSTGRES_DB_DEFAULT}
 VIETQR_BANK_ID=
 VIETQR_ACCOUNT_NO=
 VIETQR_ACCOUNT_NAME=
 EOF
     echo "✅ .env file created"
 else
-    echo "📝 Updating existing .env file..."
-    # Ensure DATABASE_URL exists
-    if ! grep -q "^DATABASE_URL=" .env; then
-        echo "DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}" >> .env
-        echo "✅ DATABASE_URL added"
+    if [[ "${DRY_RUN}" == "1" ]]; then
+        echo "🧪 DRY RUN: skipping .env creation/update"
     fi
-    # Ensure POSTGRES variables exist
-    if ! grep -q "^POSTGRES_USER=" .env; then
-        echo "POSTGRES_USER=${POSTGRES_USER}" >> .env
+    # Ensure DATABASE_URL exists in existing .env
+    if [[ "${DRY_RUN}" != "1" ]] && ! grep -q "POSTGRES_USER=" .env; then
+        echo "POSTGRES_USER=${POSTGRES_USER_DEFAULT}" >> .env
+        echo "✅ POSTGRES_USER added to existing .env"
     fi
-    if ! grep -q "^POSTGRES_PASSWORD=" .env; then
-        echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
+    if [[ "${DRY_RUN}" != "1" ]] && ! grep -q "POSTGRES_PASSWORD=" .env; then
+        echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD_DEFAULT}" >> .env
+        echo "✅ POSTGRES_PASSWORD added to existing .env"
     fi
-    if ! grep -q "^POSTGRES_DB=" .env; then
-        echo "POSTGRES_DB=${POSTGRES_DB}" >> .env
+    if [[ "${DRY_RUN}" != "1" ]] && ! grep -q "POSTGRES_DB=" .env; then
+        echo "POSTGRES_DB=${POSTGRES_DB_DEFAULT}" >> .env
+        echo "✅ POSTGRES_DB added to existing .env"
     fi
-    echo "✅ .env file updated"
+    if [[ "${DRY_RUN}" != "1" ]] && ! grep -q "DATABASE_URL=" .env; then
+        echo "DATABASE_URL=postgresql://${POSTGRES_USER_DEFAULT}:${POSTGRES_PASSWORD_DEFAULT}@db:5432/${POSTGRES_DB_DEFAULT}" >> .env
+        echo "✅ DATABASE_URL added to existing .env"
+    fi
 fi
 
-# --- 9. VERIFY DOCKER-COMPOSE HAS DB SERVICE ---
-echo "🔍 Verifying docker-compose configuration..."
-if grep -q "db:" docker-compose.prod.yml && grep -q "postgres" docker-compose.prod.yml; then
-    echo "✅ PostgreSQL service found in docker-compose.prod.yml"
-else
-    echo "⚠️  WARNING: PostgreSQL service not found in docker-compose.prod.yml"
-    echo "   Ensure your docker-compose.prod.yml includes a 'db' service with PostgreSQL"
+if [[ "${DRY_RUN}" != "1" ]]; then
+    set -a
+    # shellcheck source=/dev/null
+    source .env
+    set +a
 fi
 
-# --- 10. STOP EXISTING CONTAINERS (IDEMPOTENT) ---
-echo ""
-echo "🛑 Stopping any existing containers..."
-docker compose -f docker-compose.prod.yml down 2>/dev/null || true
-echo "✅ Previous containers stopped"
+POSTGRES_USER="${POSTGRES_USER:-$POSTGRES_USER_DEFAULT}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-$POSTGRES_PASSWORD_DEFAULT}"
+POSTGRES_DB="${POSTGRES_DB:-$POSTGRES_DB_DEFAULT}"
 
-# --- 11. BUILD & DEPLOY CONTAINERS ---
+# --- 8. BUILD & DEPLOY CONTAINERS ---
 echo ""
 echo "🏗️ Building and launching production containers..."
-docker compose -f docker-compose.prod.yml up -d --build
+run_cmd docker compose -f docker-compose.prod.yml up -d --build
 
 # --- 12. WAIT FOR DATABASE ---
 echo ""
@@ -160,21 +173,15 @@ echo "⏳ Waiting for PostgreSQL database to be ready..."
 MAX_RETRIES=60
 RETRY_COUNT=0
 
-until docker compose -f docker-compose.prod.yml exec -T db pg_isready -U ${POSTGRES_USER} > /dev/null 2>&1; do
+until run_cmd docker compose -f docker-compose.prod.yml exec -T db pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" > /dev/null 2>&1; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
         echo "❌ Database failed to start after ${MAX_RETRIES} attempts"
-        echo ""
-        echo "🔍 Troubleshooting steps:"
-        echo "   1. Check database logs: docker compose -f docker-compose.prod.yml logs db"
-        echo "   2. Verify postgres_data directory permissions"
-        echo "   3. Ensure port 5432 is not already in use"
+        run_cmd docker compose -f docker-compose.prod.yml logs db --tail 50
         exit 1
     fi
-    if [ $((RETRY_COUNT % 10)) -eq 0 ]; then
-        echo "   Still waiting for database... (attempt $RETRY_COUNT/$MAX_RETRIES)"
-    fi
-    sleep 2
+    echo "   Waiting for database... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+    run_cmd sleep 2
 done
 
 echo "✅ PostgreSQL database is ready"
@@ -196,49 +203,30 @@ fi
 echo ""
 echo "🔄 Running Alembic database migrations..."
 
-# Wait a bit for backend to be ready
-sleep 5
-
-# Check if alembic is available in the backend container
-if docker compose -f docker-compose.prod.yml exec -T backend which alembic > /dev/null 2>&1; then
-    # Run migrations
-    if docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head; then
-        echo "✅ Database migrations completed successfully"
-    else
-        echo "⚠️  Database migration failed"
-        echo "   This might be expected on first run if migrations don't exist yet"
-        echo "   Check logs with: docker compose -f docker-compose.prod.yml logs backend"
-    fi
+# Run migrations inside the backend container
+if run_cmd docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head; then
+    echo "✅ Database migrations completed successfully"
 else
-    echo "⚠️  Alembic not found in backend container"
-    echo "   Skipping migrations (might not be configured yet)"
+    echo "❌ Database migration failed"
+    echo "   Check logs with: docker compose -f docker-compose.prod.yml logs backend"
+    exit 1
 fi
 
 # --- 15. HEALTH CHECK ---
 echo ""
-echo "⏳ Performing health checks..."
-sleep 10
-
-# Check database connectivity from backend
-echo "🔍 Testing database connection from backend..."
-if docker compose -f docker-compose.prod.yml exec -T backend python -c "import psycopg2; psycopg2.connect('${DATABASE_URL}')" 2>/dev/null; then
-    echo "✅ Backend can connect to database"
-else
-    echo "⚠️  Backend database connection test skipped (psycopg2 may not be available)"
-fi
+echo "⏳ Waiting for services to become healthy..."
+run_cmd sleep 10
 
 # Check backend health
-if curl -sf http://localhost:${BACKEND_PORT}/health > /dev/null 2>&1; then
-    echo "✅ Backend is healthy (port ${BACKEND_PORT})"
-elif curl -sf http://localhost:${BACKEND_PORT} > /dev/null 2>&1; then
-    echo "✅ Backend is responding (port ${BACKEND_PORT})"
+if run_cmd curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+    echo "✅ Backend is healthy"
 else
     echo "⚠️  Backend health check pending (may still be starting)"
 fi
 
 # Check frontend
-if curl -sf http://localhost:${FRONTEND_PORT} > /dev/null 2>&1; then
-    echo "✅ Frontend is healthy (port ${FRONTEND_PORT})"
+if run_cmd curl -sf http://localhost:3000 > /dev/null 2>&1; then
+    echo "✅ Frontend is healthy"
 else
     echo "⚠️  Frontend health check pending (may still be starting)"
 fi
@@ -281,9 +269,4 @@ echo "🔐 To enable public HTTPS access via Cloudflare Tunnel:"
 echo "   1. Edit docker-compose.prod.yml"
 echo "   2. Uncomment the 'tunnel' service"
 echo "   3. Run: docker compose -f docker-compose.prod.yml up -d tunnel"
-echo ""
-echo "📝 Next Steps:"
-echo "   1. Update VIETQR credentials in .env file if needed"
-echo "   2. Check all services are running: docker compose -f docker-compose.prod.yml ps"
-echo "   3. Monitor logs for any errors"
 echo ""

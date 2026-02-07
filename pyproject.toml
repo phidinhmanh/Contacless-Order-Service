@@ -75,4 +75,5 @@ omit = ["*/tests/*", "*/__init__.py"]
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-cov>=4.1.0",
 ]

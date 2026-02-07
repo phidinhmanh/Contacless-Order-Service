@@ -10,20 +10,14 @@ from app.models.order import Order
 router = APIRouter()
 
 @router.websocket("/ws/kitchen")
-async def kitchen_websocket(websocket: WebSocket):    
-    # Just accept everything. No tokens, no checks.
+async def kitchen_websocket(websocket: WebSocket):
     await websocket.accept()
-    print("🚀 WS Kitchen: Connection accepted (Security: Disabled)")
-    
     await manager.connect(websocket, channel="kitchen")
+
     try:
         while True:
-            # Keep the pipe open
-            data = await websocket.receive_text()
-            if data == "ping":
-                await manager.send_personal_message({"type": "pong"}, websocket)
+            await asyncio.sleep(3600)  # keep connection alive
     except WebSocketDisconnect:
-        print("🔌 WS Kitchen: Connection closed")
         manager.disconnect(websocket, channel="kitchen")
 
 async def broadcast_new_order(order: Order):

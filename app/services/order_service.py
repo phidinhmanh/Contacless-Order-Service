@@ -4,6 +4,7 @@ Handles complex order operations that involve multiple models.
 """
 
 from fastapi import HTTPException
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 
 from app.models.food import Food
@@ -85,11 +86,34 @@ class OrderService:
                     detail=f"Food '{food.name}' is sold out or has insufficient stock"
                 )
 
-            # Update stock
+            # Update stock atomically when tracking inventory
             if food.stock_quantity is not None:
-                food.stock_quantity -= item_data.quantity
-                if food.stock_quantity == 0:
-                    food.is_available = False
+                updated = (
+                    self.db.query(Food)
+                    .filter(
+                        Food.id == food.id,
+                        Food.stock_quantity >= item_data.quantity,
+                    )
+                    .update(
+                        {
+                            Food.stock_quantity: Food.stock_quantity - item_data.quantity,
+                            Food.is_available: case(
+                                ((Food.stock_quantity - item_data.quantity) <= 0, False),
+                                else_=Food.is_available,
+                            ),
+                        },
+                        synchronize_session=False,
+                    )
+                )
+
+                if updated == 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Food '{food.name}' is sold out or has insufficient stock"
+                    )
+
+                self.db.flush()
+                self.db.refresh(food)
 
             order_item = OrderItem(
                 order_id=order.id,
