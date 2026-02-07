@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -20,7 +20,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile # Assuming this is in the root
     container_name: contacless-backend
     restart: unless-stopped
     ports:
@@ -35,20 +35,20 @@ services:
     volumes:
       - ./static:/app/static
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=${BACKEND_URL:-http://localhost:8000}
-    container_name: contacless-frontend
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
-    depends_on:
-      - backend
+frontend:
+  build:
+    context: . # Change this to root
+    dockerfile: frontend/Dockerfile # Point to the file inside the folder
+    args:
+      - NEXT_PUBLIC_API_URL=${BACKEND_URL:-http://localhost:8000}
+  container_name: contacless-frontend
+  restart: unless-stopped
+  ports:
+    - "3000:3000"
+  environment:
+    - BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
+  depends_on:
+    - backend
 
 volumes:
   postgres_data:
