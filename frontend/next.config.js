@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    output: 'standalone',
     images: {
         // Since we are using rewrites, Next.js sees the image as "local" 
         // to its own domain, so remotePatterns are technically for external URLs.
