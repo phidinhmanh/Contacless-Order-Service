@@ -88,12 +88,42 @@ class AnalyticsService:
         return [{"food_name": i.name, "quantity": int(i.quantity), "revenue": float(i.revenue)} for i in items]
 
     def get_retention_data(self) -> Dict[str, Any]:
-        """Placeholder to keep the API alive while you grow your user base."""
+        """Calculate 14-day and 30-day retention metrics."""
+        now = datetime.now(UTC)
+
+        def _retention(window_days: int) -> tuple[int, int, float]:
+            window_start = now - timedelta(days=window_days)
+
+            recent_users = {
+                row[0]
+                for row in self.db.query(Order.user_id)
+                .filter(Order.user_id.isnot(None), Order.created_at >= window_start)
+                .distinct()
+                .all()
+            }
+            prior_users = {
+                row[0]
+                for row in self.db.query(Order.user_id)
+                .filter(Order.user_id.isnot(None), Order.created_at < window_start)
+                .distinct()
+                .all()
+            }
+
+            returning_users = len(recent_users & prior_users)
+            eligible_users = len(prior_users)
+            rate = round((returning_users / eligible_users * 100), 2) if eligible_users else 0
+            return returning_users, eligible_users, rate
+
+        returning_14d, eligible_14d, rate_14d = _retention(14)
+        returning_30d, eligible_30d, rate_30d = _retention(30)
+
         return {
-            "rate_14d": 0,
-            "rate_30d": 0,
-            "returning_users_30d": 0,
-            "eligible_users_30d": 0
+            "rate_14d": rate_14d,
+            "returning_users_14d": returning_14d,
+            "eligible_users_14d": eligible_14d,
+            "rate_30d": rate_30d,
+            "returning_users_30d": returning_30d,
+            "eligible_users_30d": eligible_30d,
         }
 
     def get_peak_hours(self, days: int = 7) -> List[Dict[str, Any]]:
@@ -140,11 +170,12 @@ class AnalyticsService:
                 alerts.append({
                     "food_name": name,
                     "current_stock": stock,
-                    "hours_remaining": round(hours_left, 1) if hours_left < 100 else "Stable",
+                    "velocity_per_hour": round(hourly_vel, 3),
+                    "estimated_hours_remaining": round(hours_left, 1) if hours_left < 100 else "Stable",
                     "priority": "HIGH" if hours_left < 6 else "MEDIUM"
                 })
         
-        return sorted(alerts, key=lambda x: (x["priority"] == "MEDIUM", x["hours_remaining"]))
+        return sorted(alerts, key=lambda x: (x["priority"] == "MEDIUM", x["estimated_hours_remaining"]))
 
     def get_daily_revenue(self, days: int = 30) -> List[Dict[str, Any]]:
         """Get daily revenue for charting."""

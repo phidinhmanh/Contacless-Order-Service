@@ -18,6 +18,7 @@ from app.models.base import Base
 from app.models.user import User
 from app.models.food import Food
 from app.models.order import Order, OrderItem, OrderStatus
+from app.models.category import Category
 from app.models.table import Table
 from app.models.payment import Payment, PaymentProvider, PaymentStatus
 from app.api.deps import get_db
@@ -128,8 +129,22 @@ def create_menu(db_session: Session) -> List[Food]:
     """Create menu with categories."""
     foods = []
     food_id = 1
-    
-    for category, items in FOOD_CATEGORIES.items():
+    categories: dict[str, Category] = {}
+
+    for index, (category_name, items) in enumerate(FOOD_CATEGORIES.items(), start=1):
+        category = Category(
+            name=category_name,
+            description=f"Danh mục {category_name}",
+            display_order=index,
+            is_active=True,
+        )
+        db_session.add(category)
+        categories[category_name] = category
+
+    db_session.flush()
+
+    for category_name, items in FOOD_CATEGORIES.items():
+        category = categories[category_name]
         for name, price in items:
             food = Food(
                 id=food_id,
@@ -149,7 +164,7 @@ def create_menu(db_session: Session) -> List[Food]:
         id=food_id,
         name="Hết Hàng Item",
         price=50000,
-        category="Khác",
+        category=categories["Khác"],
         stock_quantity=0,
         is_available=False
     )
