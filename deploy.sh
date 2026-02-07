@@ -12,6 +12,8 @@ set -e
 APP_NAME="contacless-order"
 FRONTEND_PORT=3000
 BACKEND_PORT=8000
+GITHUB_REPO="https://github.com/phidinhmanh/Contacless-Order-Service.git"
+DEPLOY_DIR="/opt/contacless-order"
 
 # --- 1. SCRIPT PRE-CHECKS ---
 if [[ $EUID -ne 0 ]]; then
@@ -22,7 +24,22 @@ fi
 echo "🚀 Starting Contacless Order Service Deployment..."
 echo "================================================"
 
-# --- 2. AUTO-INSTALL DOCKER (IDEMPOTENT) ---
+# --- 2. INSTALL SYSTEM DEPENDENCIES ---
+echo "📦 Installing system dependencies..."
+apt-get update -qq
+apt-get install -y -qq git curl openssl python3 python3-pip python3-venv
+
+# --- 3. INSTALL UV (ASTRAL PACKAGE MANAGER) ---
+if ! command -v uv &> /dev/null; then
+    echo "📦 Installing uv (Astral package manager)..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.cargo/bin:$PATH"
+    echo "✅ uv installed successfully."
+else
+    echo "✅ uv is already installed ($(uv --version))"
+fi
+
+# --- 4. AUTO-INSTALL DOCKER (IDEMPOTENT) ---
 if ! command -v docker &> /dev/null; then
     echo "📦 Docker not found. Installing now..."
     curl -fsSL https://get.docker.com -o get-docker.sh
@@ -37,214 +54,42 @@ fi
 # Ensure Docker Compose plugin is present
 if ! docker compose version &> /dev/null; then
     echo "📦 Docker Compose plugin missing. Installing..."
-    apt-get update -qq && apt-get install -y docker-compose-plugin
+    apt-get install -y -qq docker-compose-plugin
     echo "✅ Docker Compose plugin installed."
 else
     echo "✅ Docker Compose already available"
 fi
 
-# --- 3. CREATE PRODUCTION DOCKER-COMPOSE ---
-echo "📝 Generating production docker-compose.yml..."
+# --- 5. GIT WORKFLOW (CLONE OR SYNC CODE) ---
+echo "🔄 Setting up code from GitHub..."
 
-cat > docker-compose.prod.yml <<'EOF'
-version: "3.9"
-
-services:
-  # ============ FASTAPI BACKEND ============
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ${APP_NAME:-contacless}_backend
-    environment:
-      - SECRET_KEY=${SECRET_KEY:-changeme-in-production}
-      - DATABASE_URL=sqlite:///./restaurant.db
-      - VIETQR_BANK_ID=${VIETQR_BANK_ID:-}
-      - VIETQR_ACCOUNT_NO=${VIETQR_ACCOUNT_NO:-}
-      - VIETQR_ACCOUNT_NAME=${VIETQR_ACCOUNT_NAME:-}
-    volumes:
-      - ./data:/app/data
-      - ./static:/app/static
-    expose:
-      - "8000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-
-  # ============ NEXT.JS FRONTEND ============
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: ${APP_NAME:-contacless}_frontend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-    depends_on:
-      backend:
-        condition: service_healthy
-    expose:
-      - "3000"
-    restart: unless-stopped
-
-  # ============ NGINX REVERSE PROXY ============
-  nginx:
-    image: nginx:alpine
-    container_name: ${APP_NAME:-contacless}_nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./static:/app/static:ro
-    depends_on:
-      - backend
-      - frontend
-    restart: unless-stopped
-
-  # ============ CLOUDFLARE TUNNEL (OPTIONAL) ============
-  # Uncomment to enable free public HTTPS URL via trycloudflare.com
-  # tunnel:
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: ${APP_NAME:-contacless}_tunnel
-  #   command: tunnel --url http://nginx:80
-  #   depends_on:
-  #     - nginx
-  #   restart: unless-stopped
-
-volumes:
-  data:
-EOF
-
-# --- 4. CREATE BACKEND DOCKERFILE ---
-if [ ! -f Dockerfile ]; then
-    echo "📝 Creating Backend Dockerfile..."
-    cat > Dockerfile <<'EOF'
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for fast dependency management
-RUN pip install uv
-
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync --frozen --no-dev
-
-# Copy application code
-COPY app ./app
-COPY alembic ./alembic
-COPY alembic.ini ./
-
-# Create directories for data
-RUN mkdir -p data static/images/foods static/qr_codes
-
-# Run migrations and start server
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"]
-EOF
-    echo "✅ Backend Dockerfile created"
+# Clone if the directory doesn't exist, otherwise sync
+if [ ! -d "$DEPLOY_DIR" ]; then
+    echo "📥 Cloning repository to $DEPLOY_DIR..."
+    git clone "$GITHUB_REPO" "$DEPLOY_DIR"
+    cd "$DEPLOY_DIR"
+else
+    cd "$DEPLOY_DIR"
+    git fetch origin
+    
+    # Check if we are already on release branch
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$CURRENT_BRANCH" != "release" ]; then
+        echo "🔀 Switching from $CURRENT_BRANCH to release..."
+        git checkout release
+    fi
+    
+    echo "📥 Pulling latest changes..."
+    git pull origin release
 fi
+echo "✅ Code sync complete."
 
-# --- 5. CREATE FRONTEND DOCKERFILE ---
-if [ ! -f frontend/Dockerfile ]; then
-    echo "📝 Creating Frontend Dockerfile..."
-    cat > frontend/Dockerfile <<'EOF'
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+# --- 6. ENSURE CONFIG DIRECTORIES ---
+mkdir -p nginx data static/images/foods static/qr_codes
 
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
-
-EXPOSE 3000
-CMD ["node", "server.js"]
-EOF
-    echo "✅ Frontend Dockerfile created"
-fi
-
-# --- 6. CREATE NGINX CONFIG ---
-echo "📝 Creating Nginx configuration..."
-cat > nginx.conf <<'EOF'
-events {
-    worker_connections 1024;
-}
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    upstream backend {
-        server backend:8000;
-    }
-
-    upstream frontend {
-        server frontend:3000;
-    }
-
-    server {
-        listen 80;
-        server_name _;
-
-        # API requests -> FastAPI
-        location /api/ {
-            proxy_pass http://backend;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # WebSocket -> FastAPI
-        location /ws/ {
-            proxy_pass http://backend;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_set_header Host $host;
-        }
-
-        # Static files
-        location /static/ {
-            alias /app/static/;
-            expires 7d;
-            add_header Cache-Control "public, immutable";
-        }
-
-        # Everything else -> Next.js
-        location / {
-            proxy_pass http://frontend;
-            proxy_http_version 1.1;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-    }
-}
-EOF
-echo "✅ Nginx configuration created"
-
-# --- 7. CREATE .env FILE ---
+# --- 7. CREATE .env FILE (IF MISSING) ---
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file..."
+    echo "📝 Creating bootstrap .env file..."
     cat > .env <<EOF
 APP_NAME=${APP_NAME}
 SECRET_KEY=$(openssl rand -hex 32)
@@ -252,12 +97,13 @@ VIETQR_BANK_ID=
 VIETQR_ACCOUNT_NO=
 VIETQR_ACCOUNT_NAME=
 EOF
-    echo "✅ .env file created (please configure VietQR settings)"
+    echo "✅ .env file created"
 fi
 
 # --- 8. BUILD & DEPLOY ---
 echo ""
-echo "🏗️ Building and launching containers..."
+echo "🏗️ Building and launching production containers..."
+# Use the official docker-compose.prod.yml in the repo
 docker compose -f docker-compose.prod.yml up -d --build
 
 # --- 9. HEALTH CHECK ---
