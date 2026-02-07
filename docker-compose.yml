@@ -37,8 +37,8 @@ services:
 
 frontend:
   build:
-    context: . # Change this to root
-    dockerfile: frontend/Dockerfile # Point to the file inside the folder
+    context: ./frontend
+    dockerfile: Dockerfile
     args:
       - NEXT_PUBLIC_API_URL=${BACKEND_URL:-http://localhost:8000}
   container_name: contacless-frontend

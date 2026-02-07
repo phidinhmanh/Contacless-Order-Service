@@ -1,47 +1,36 @@
 FROM node:20-alpine AS base
 
-# --- 1. Install dependencies ---
+# 1. Dependencies
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Point to the frontend folder specifically
-COPY frontend/package.json frontend/package-lock.json* ./
+# Copy package files from current directory (not frontend/ subdirectory)
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# --- 2. Build the source code ---
+# 2. Builder
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-# Copy all frontend files (including tsconfig.json and lib/)
-COPY frontend/ . 
+
+# Copy all files from current directory
+COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED 1
-
-# Standard Next.js build
 RUN npm run build
 
-# --- 3. Production runner ---
+# 3. Runner
 FROM base AS runner
 WORKDIR /app
-
 ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy essential files for standalone mode
 COPY --from=builder /app/public ./public
-
-# Standalone mode setup (Standard for Next.js 14/15+)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
-
 EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
 CMD ["node", "server.js"]
