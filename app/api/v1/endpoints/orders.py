@@ -11,7 +11,7 @@ from app.services.order_service import OrderService
 router = APIRouter()
 
 
-@router.get("", response_model=list[OrderResponse])
+@router.get("/", response_model=list[OrderResponse])
 def get_orders(
     skip: int = 0,
     limit: int = 100,
@@ -42,7 +42,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     return order
 
 
-@router.post("", response_model=OrderResponse, status_code=201)
+@router.post("/", response_model=OrderResponse, status_code=201)
 async def create_order(
     order_in: OrderCreate,
     db: Session = Depends(get_db),

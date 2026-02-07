@@ -3,6 +3,7 @@ Kitchen WebSocket endpoint for real-time order updates.
 Security disabled for development/testing ease.
 """
 
+import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.core.websocket import manager
 from app.models.order import Order
