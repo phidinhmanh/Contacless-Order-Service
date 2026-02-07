@@ -145,3 +145,33 @@ class AnalyticsService:
                 })
         
         return sorted(alerts, key=lambda x: (x["priority"] == "MEDIUM", x["hours_remaining"]))
+
+    def get_daily_revenue(self, days: int = 30) -> List[Dict[str, Any]]:
+        """Get daily revenue for charting."""
+        start = datetime.now(UTC) - timedelta(days=days)
+        result = self.db.query(
+            func.date(func.timezone(self.tz, Order.created_at)).label("date"),
+            func.sum(Order.total_price).label("revenue")
+        ).filter(Order.created_at >= start, Order.status.in_(self.valid_statuses))\
+         .group_by("date")\
+         .order_by("date").all()
+
+        return [{"date": str(r.date), "revenue": float(r.revenue)} for r in result]
+
+    def get_table_revenue(self, days: int = 30) -> List[Dict[str, Any]]:
+        """Analyze revenue by table."""
+        start = datetime.now(UTC) - timedelta(days=days)
+        result = self.db.query(
+            Order.table_id,
+            func.sum(Order.total_price).label("total_revenue"),
+            func.count(Order.id).label("order_count")
+        ).filter(Order.created_at >= start, Order.status.in_(self.valid_statuses))\
+         .group_by(Order.table_id)\
+         .order_by(text("total_revenue DESC")).all()
+
+        return [{
+            "table_id": r.table_id,
+            "total_revenue": float(r.total_revenue),
+            "order_count": r.order_count,
+            "avg_order_value": float(r.total_revenue / r.order_count) if r.order_count > 0 else 0
+        } for r in result]

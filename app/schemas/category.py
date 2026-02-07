@@ -21,7 +21,7 @@ class CategoryUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     display_order: int | None = None
-    is_active: bool | None = None
+    is_active: bool = Field(default=True)
 
 
 class CategoryResponse(CategoryBase):

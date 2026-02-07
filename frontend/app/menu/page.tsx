@@ -58,9 +58,8 @@ export default function MenuPage() {
         // Filter by category (handle both category_id and category as field names)
         if (activeCategory) {
             result = result.filter((food) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const f = food as unknown as Record<string, any>;
-                return f.category_id === activeCategory || f.category === activeCategory;
+                const foodCategoryId = food.category_id ? String(food.category_id) : null;
+                return foodCategoryId === activeCategory;
             });
         }
 

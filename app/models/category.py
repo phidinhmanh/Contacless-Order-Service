@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 
+import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
 
@@ -14,7 +15,7 @@ class Category(Base):
     name = Column(String(50), unique=True, nullable=False, index=True)
     description = Column(String(255), nullable=True)
     display_order = Column(Integer, default=0)  # For UI ordering
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True, server_default=sa.text('true'), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     # Relationships

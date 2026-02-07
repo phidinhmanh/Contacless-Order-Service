@@ -44,7 +44,7 @@ class Order(Base):
     table_id = Column(Integer, ForeignKey("tables.id", ondelete="SET NULL"), nullable=True)
     table_session_id = Column(Integer, ForeignKey("table_sessions.id", ondelete="SET NULL"), nullable=True, index=True)
     total_price = Column(Float, default=0.0)
-    status = Column(String(20), default="pending", index=True)
+    status = Column(String(20), default="pending", server_default="pending", nullable=False, index=True)
     payment_status = Column(String(20), default="unpaid", index=True)  # Avoids JOINs with Payment table
     idempotency_key = Column(String(100), unique=True, nullable=True, index=True)
     special_instructions = Column(String(500), nullable=True)  # For "không cay", "nhiều sốt", etc.
