@@ -59,8 +59,7 @@ error_traceback.txt
 .env.local
 .env.*.local
 
-# UV package manager
-uv.lock
+
 
 # Pytest
 .pytest_cache/
