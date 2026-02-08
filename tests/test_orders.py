@@ -95,14 +95,7 @@ class TestOrderProcess:
         }
         
         def place_order():
-            from fastapi.testclient import TestClient
-            from main import app
-            from app.api.deps import get_db
-            from tests.conftest import override_get_db
-            
-            with TestClient(app) as local_client:
-                local_client.app.dependency_overrides[get_db] = override_get_db
-                return local_client.post("/api/v1/orders/", json=order_data, headers=auth_headers)
+            return client.post("/api/v1/orders/", json=order_data, headers=auth_headers)
 
         with ThreadPoolExecutor(max_workers=2) as executor:
             futures = [executor.submit(place_order) for _ in range(2)]

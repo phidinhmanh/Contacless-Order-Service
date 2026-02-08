@@ -18,7 +18,7 @@ def test_view_available_items(client: TestClient, db_session: Session):
         db_session.add(food)
     db_session.commit()
 
-    response = client.get("/api/v1/foods/")
+    response = client.get("/api/v1/menu/")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 5
@@ -40,7 +40,7 @@ def test_category_filtering(client: TestClient, db_session: Session):
         db_session.add(food)
     db_session.commit()
 
-    response = client.get(f"/api/v1/foods/?category_id={drinks.id}")
+    response = client.get(f"/api/v1/menu/?category_id={drinks.id}")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 3
@@ -56,7 +56,7 @@ def test_fetch_categories(client: TestClient, db_session: Session):
         db_session.add(category)
     db_session.commit()
 
-    response = client.get("/api/v1/foods/categories")
+    response = client.get("/api/v1/menu/categories")
     assert response.status_code == 200
     data = response.json()
     # Note: create_menu fixture might already have categories, so we check if ours are present
@@ -77,7 +77,7 @@ def test_menu_pagination(client: TestClient, db_session: Session):
 
     # Get all items first to see the full list and confirm sorting (default is by ID)
     # Testing skip=5, limit=5
-    response = client.get("/api/v1/foods/?skip=5&limit=5")
+    response = client.get("/api/v1/menu/?skip=5&limit=5")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 5
