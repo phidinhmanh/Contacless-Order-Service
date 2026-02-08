@@ -304,13 +304,53 @@ fi
 echo ""
 echo "🔄 Running Alembic database migrations..."
 
+# Check if migrations exist
+MIGRATION_COUNT=$(find alembic/versions -name "*.py" ! -name "__init__.py" 2>/dev/null | wc -l)
+
+if [ "$MIGRATION_COUNT" -eq "0" ]; then
+    echo "⚠️  No migration files found!"
+    echo ""
+    echo "📝 Creating initial migration from models..."
+    if run_cmd docker compose -f docker-compose.prod.yml exec -T backend alembic revision --autogenerate -m "initial_schema"; then
+        echo "✅ Initial migration created"
+    else
+        echo "❌ Failed to create migration"
+        echo "   This might be normal if models aren't set up yet"
+    fi
+fi
+
 # Run migrations inside the backend container
-if run_cmd docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head; then
+echo "🔄 Applying migrations..."
+if run_cmd docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head 2>&1 | tee /tmp/migration_output.log; then
     echo "✅ Database migrations completed successfully"
 else
-    echo "❌ Database migration failed"
-    echo "   Check logs with: docker compose -f docker-compose.prod.yml logs backend"
-    exit 1
+    # Check for specific errors
+    if grep -qi "relation.*does not exist" /tmp/migration_output.log 2>/dev/null; then
+        echo ""
+        echo "❌ Migration failed: Database tables don't exist"
+        echo ""
+        echo "🔧 SOLUTION:"
+        echo "   Your migrations assume tables already exist."
+        echo "   Run the migration fix script:"
+        echo ""
+        echo "   bash scripts/fix-migrations.sh"
+        echo ""
+        echo "   Or manually regenerate migrations:"
+        echo "   1. Backup: cp -r alembic/versions alembic/versions_backup"
+        echo "   2. Delete: rm alembic/versions/*.py && touch alembic/versions/__init__.py"
+        echo "   3. Generate: docker compose -f docker-compose.prod.yml exec backend alembic revision --autogenerate -m 'initial_schema'"
+        echo "   4. Apply: docker compose -f docker-compose.prod.yml exec backend alembic upgrade head"
+        echo ""
+    else
+        echo "❌ Database migration failed"
+        echo "   Check logs with: docker compose -f docker-compose.prod.yml logs backend"
+    fi
+
+    read -p "Continue anyway? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
 fi
 
 # --- 13. HEALTH CHECK ---
