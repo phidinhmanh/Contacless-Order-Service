@@ -80,8 +80,31 @@ npx playwright test
 # Start all services
 docker compose -f docker-compose.prod.yml up -d
 
-# One-command deploy (Ubuntu)
+# One-command deploy (Ubuntu 22.04/24.04 LTS)
 bash deploy.sh
+
+# One-command deploy (WSL Debian - requires WSL2)
+bash deploy-wsl-debian.sh
+
+# Verify deployment
+bash scripts/verify-deployment.sh
+```
+
+### WSL Debian Deployment
+```bash
+# For WSL Debian (requires WSL2 and Docker Desktop or Docker Engine)
+chmod +x deploy-wsl-debian.sh
+sudo ./deploy-wsl-debian.sh
+
+# Access from Windows browser
+http://localhost:3000        # Frontend
+http://localhost:8000/docs   # API docs
+
+# Check WSL version (must be WSL2)
+wsl --list --verbose         # Run in PowerShell
+
+# Restart WSL if needed
+wsl --shutdown               # Run in PowerShell, then restart WSL
 ```
 
 ## Project Architecture

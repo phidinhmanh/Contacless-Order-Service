@@ -77,10 +77,14 @@ services:
       - frontend
     restart: unless-stopped
   # ============ CLOUDFLARE TUNNEL (OPTIONAL) ============
+  # Uncomment this service to enable public HTTPS access
+  # See docs/cloudflare-tunnel-setup.md for setup instructions
   # tunnel:
   #   image: cloudflare/cloudflared:latest
   #   container_name: ${APP_NAME:-contacless}_tunnel
-  #   command: tunnel --url http://nginx:80
+  #   command: tunnel run
+  #   environment:
+  #     - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
   #   depends_on:
   #     - nginx
   #   restart: unless-stopped
