@@ -321,36 +321,75 @@ fi
 
 # Run migrations inside the backend container
 echo "🔄 Applying migrations..."
-if run_cmd docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head 2>&1 | tee /tmp/migration_output.log; then
+
+# Use PIPEFAIL to catch errors even with pipes
+set +e  # Temporarily disable exit on error
+set -o pipefail  # Make pipe return exit code of failed command
+
+# Run migration and capture both output and exit code
+MIGRATION_OUTPUT=$(mktemp)
+docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head 2>&1 | tee "$MIGRATION_OUTPUT"
+MIGRATION_EXIT_CODE=${PIPEFAIL[0]:-$?}
+
+set +o pipefail
+set -e  # Re-enable exit on error
+
+if [ $MIGRATION_EXIT_CODE -eq 0 ]; then
     echo "✅ Database migrations completed successfully"
+    rm -f "$MIGRATION_OUTPUT"
 else
-    # Check for specific errors
-    if grep -qi "relation.*does not exist" /tmp/migration_output.log 2>/dev/null; then
+    echo ""
+    echo "❌ Database migration FAILED (exit code: $MIGRATION_EXIT_CODE)"
+    echo ""
+
+    # Check for specific error patterns
+    if grep -qi "relation.*does not exist" "$MIGRATION_OUTPUT" 2>/dev/null; then
+        echo "🔍 Error detected: Database tables don't exist"
         echo ""
-        echo "❌ Migration failed: Database tables don't exist"
+        echo "📋 Your migration chain is broken:"
+        echo "   - Migrations try to ALTER tables (add columns)"
+        echo "   - But base tables haven't been CREATE'd yet"
+        echo "   - Missing initial migration that creates tables"
         echo ""
-        echo "🔧 SOLUTION:"
-        echo "   Your migrations assume tables already exist."
-        echo "   Run the migration fix script:"
+        echo "🔧 SOLUTION OPTIONS:"
         echo ""
-        echo "   bash scripts/fix-migrations.sh"
+        echo "   Option 1: Use automated fix script (RECOMMENDED)"
+        echo "     bash scripts/fix-migrations.sh"
         echo ""
-        echo "   Or manually regenerate migrations:"
-        echo "   1. Backup: cp -r alembic/versions alembic/versions_backup"
-        echo "   2. Delete: rm alembic/versions/*.py && touch alembic/versions/__init__.py"
-        echo "   3. Generate: docker compose -f docker-compose.prod.yml exec backend alembic revision --autogenerate -m 'initial_schema'"
-        echo "   4. Apply: docker compose -f docker-compose.prod.yml exec backend alembic upgrade head"
+        echo "   Option 2: Manual regeneration"
+        echo "     1. Backup:   cp -r alembic/versions alembic/versions_backup"
+        echo "     2. Delete:   rm alembic/versions/*.py && touch alembic/versions/__init__.py"
+        echo "     3. Generate: docker compose -f docker-compose.prod.yml exec backend alembic revision --autogenerate -m 'initial_schema'"
+        echo "     4. Apply:    docker compose -f docker-compose.prod.yml exec backend alembic upgrade head"
+        echo ""
+        echo "   Option 3: See detailed guide"
+        echo "     cat docs/migration-fix-guide.md"
+        echo ""
+    elif grep -qi "target database is not up to date\|target database.*dirty" "$MIGRATION_OUTPUT" 2>/dev/null; then
+        echo "🔍 Error detected: Migration version mismatch"
+        echo ""
+        echo "   Run: docker compose -f docker-compose.prod.yml exec backend alembic current"
+        echo "   Then: docker compose -f docker-compose.prod.yml exec backend alembic history"
         echo ""
     else
-        echo "❌ Database migration failed"
-        echo "   Check logs with: docker compose -f docker-compose.prod.yml logs backend"
+        echo "🔍 Unknown migration error. Check the output above."
+        echo ""
+        echo "   Full output saved to: $MIGRATION_OUTPUT"
+        echo "   Check backend logs: docker compose -f docker-compose.prod.yml logs backend | tail -50"
+        echo ""
     fi
+
+    rm -f "$MIGRATION_OUTPUT"
 
     read -p "Continue anyway? (y/N) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo ""
+        echo "❌ Deployment halted due to migration failure"
         exit 1
     fi
+    echo ""
+    echo "⚠️  WARNING: Continuing with broken migrations - services may fail!"
 fi
 
 # --- 13. HEALTH CHECK ---

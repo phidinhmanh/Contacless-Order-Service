@@ -203,12 +203,54 @@ fi
 echo ""
 echo "🔄 Running Alembic database migrations..."
 
+# Check if migrations exist
+MIGRATION_COUNT=$(find alembic/versions -name "*.py" ! -name "__init__.py" 2>/dev/null | wc -l)
+
+if [ "$MIGRATION_COUNT" -eq "0" ]; then
+    echo "⚠️  No migration files found!"
+    echo ""
+    echo "📝 Creating initial migration from models..."
+    if run_cmd docker compose -f docker-compose.prod.yml exec -T backend alembic revision --autogenerate -m "initial_schema"; then
+        echo "✅ Initial migration created"
+    else
+        echo "❌ Failed to create migration"
+    fi
+fi
+
 # Run migrations inside the backend container
-if run_cmd docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head; then
+echo "🔄 Applying migrations..."
+
+# Capture output and exit code properly
+set +e  # Temporarily disable exit on error
+MIGRATION_OUTPUT=$(mktemp)
+docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head 2>&1 | tee "$MIGRATION_OUTPUT"
+MIGRATION_EXIT_CODE=${PIPESTATUS[0]:-$?}
+set -e  # Re-enable exit on error
+
+if [ $MIGRATION_EXIT_CODE -eq 0 ]; then
     echo "✅ Database migrations completed successfully"
+    rm -f "$MIGRATION_OUTPUT"
 else
-    echo "❌ Database migration failed"
-    echo "   Check logs with: docker compose -f docker-compose.prod.yml logs backend"
+    echo ""
+    echo "❌ Database migration FAILED (exit code: $MIGRATION_EXIT_CODE)"
+    echo ""
+
+    # Check for specific error patterns
+    if grep -qi "relation.*does not exist" "$MIGRATION_OUTPUT" 2>/dev/null; then
+        echo "🔍 Error: Database tables don't exist - migration chain broken"
+        echo ""
+        echo "🔧 SOLUTION:"
+        echo "   bash scripts/fix-migrations.sh"
+        echo ""
+        echo "   Or see: docs/migration-fix-guide.md"
+        echo ""
+    fi
+
+    cat "$MIGRATION_OUTPUT"
+    rm -f "$MIGRATION_OUTPUT"
+
+    echo ""
+    echo "❌ Deployment failed - fix migrations before continuing"
     exit 1
 fi
 
