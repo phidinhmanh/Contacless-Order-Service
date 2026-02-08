@@ -76,4 +76,5 @@ omit = ["*/tests/*", "*/__init__.py"]
 dev = [
     "pytest>=9.0.2",
     "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
 ]
