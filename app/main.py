@@ -15,6 +15,7 @@ async def lifespan(app: FastAPI):
     - Database tables are now handled by Alembic (external to this code).
     - Ensure cloud resources or caches are warmed up here.
     """
+    Base.metadata.create_all(engine, checkfirst=True)
     yield
     """
     Shutdown:

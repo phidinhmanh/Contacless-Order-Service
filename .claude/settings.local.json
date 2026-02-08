@@ -5,7 +5,19 @@
       "Bash(git reset HEAD:*)",
       "Bash(git commit:*)",
       "Bash(uv run pytest:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T db pg_isready -U postgres)",
+      "Bash(docker compose -f docker-compose.prod.yml up -d backend)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head)",
+      "Bash(ls:*)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic revision --autogenerate -m \"initial_schema\")",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T db psql -U postgres -d contacless_order -c \"DROP TABLE IF EXISTS alembic_version CASCADE;\")",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T db psql -U postgres -d contacless_order -c \"\\\\dt\")",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic current)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic stamp base)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic history)",
+      "Bash(docker compose -f docker-compose.prod.yml down backend)",
+      "Bash(docker compose -f docker-compose.prod.yml up -d --build backend)"
     ]
   }
 }
