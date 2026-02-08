@@ -48,8 +48,8 @@ export const useMenuStore = create<MenuState>()(
                 try {
                     console.log('🔄 Fetching fresh menu data...');
                     const [categoriesRes, foodsRes] = await Promise.all([
-                        api.get<CategoryItem[]>('/foods/categories'),
-                        api.get<Food[]>('/foods/'),
+                        api.get<CategoryItem[]>('/categories'),
+                        api.get<Food[]>('/foods'),
                     ]);
 
                     set({

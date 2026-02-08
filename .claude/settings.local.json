@@ -17,7 +17,19 @@
       "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic stamp base)",
       "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic history)",
       "Bash(docker compose -f docker-compose.prod.yml down backend)",
-      "Bash(docker compose -f docker-compose.prod.yml up -d --build backend)"
+      "Bash(docker compose -f docker-compose.prod.yml up -d --build backend)",
+      "Bash(xargs:*)",
+      "Bash(uv run:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(PYTHONIOENCODING=utf-8 uv run python:*)",
+      "Bash(npm run dev)",
+      "Bash(npx playwright test:*)",
+      "Bash(PYTHONPATH=. uv run:*)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONPATH=. uv run:*)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONPATH=. uv:*)",
+      "Bash(export:*)",
+      "Bash(curl:*)"
     ]
   }
 }

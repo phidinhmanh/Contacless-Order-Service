@@ -3,18 +3,39 @@ Sample data script to populate the database with Vietnamese food items and table
 Run with: uv run python scripts/seed_data.py
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app.db.session import SessionLocal
 from app.models.food import Food
 from app.models.table import Table
+from app.models.category import Category
 
 
 def seed_foods(db):
-    """Seed sample Vietnamese food items with placeholder images."""
-    foods = [
+    """Seed sample Vietnamese food items and categories."""
+    # 1. Create Categories first
+    category_names = ["Soup", "Sandwich", "Main", "Appetizer", "Drinks", "Seafood", "Dessert"]
+    categories = {}
+
+    for name in category_names:
+        cat = db.query(Category).filter(Category.name == name).first()
+        if not cat:
+            cat = Category(name=name, description=f"Sample {name} category")
+            db.add(cat)
+            db.flush()  # To get the ID
+            print(f"Added Category: {name}")
+        categories[name] = cat
+
+    db.commit()
+
+    # 2. Define foods with category mapping
+    foods_data = [
         {
             "name": "Phở Bò",
             "price": 55000,
-            "category": "Soup",
+            "category_name": "Soup",
             "description": "Traditional Vietnamese beef noodle soup with rice noodles, tender beef slices, and aromatic broth.",
             "image_url": "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400",
             "stock_quantity": 50,
@@ -23,7 +44,7 @@ def seed_foods(db):
         {
             "name": "Bánh Mì",
             "price": 25000,
-            "category": "Sandwich",
+            "category_name": "Sandwich",
             "description": "Crispy baguette with pate, pickled vegetables, cilantro, and grilled pork.",
             "image_url": "https://images.unsplash.com/photo-1600454021747-59e0399f0d98?w=400",
             "stock_quantity": 30,
@@ -32,7 +53,7 @@ def seed_foods(db):
         {
             "name": "Bún Chả",
             "price": 60000,
-            "category": "Main",
+            "category_name": "Main",
             "description": "Hanoi-style grilled pork with vermicelli noodles, fresh herbs, and dipping sauce.",
             "image_url": "https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?w=400",
             "stock_quantity": 25,
@@ -41,7 +62,7 @@ def seed_foods(db):
         {
             "name": "Cơm Tấm",
             "price": 50000,
-            "category": "Main",
+            "category_name": "Main",
             "description": "Broken rice with grilled pork chop, fried egg, and fish sauce.",
             "image_url": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400",
             "stock_quantity": 40,
@@ -50,7 +71,7 @@ def seed_foods(db):
         {
             "name": "Gỏi Cuốn",
             "price": 35000,
-            "category": "Appetizer",
+            "category_name": "Appetizer",
             "description": "Fresh spring rolls with shrimp, pork, rice noodles, and peanut dipping sauce.",
             "image_url": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400",
             "stock_quantity": 20,
@@ -59,7 +80,7 @@ def seed_foods(db):
         {
             "name": "Cà Phê Sữa Đá",
             "price": 29000,
-            "category": "Drinks",
+            "category_name": "Drinks",
             "description": "Vietnamese iced coffee with sweetened condensed milk.",
             "image_url": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400",
             "stock_quantity": 100,
@@ -68,7 +89,7 @@ def seed_foods(db):
         {
             "name": "Ốc Hương Xào Bơ Tỏi",
             "price": 120000,
-            "category": "Seafood",
+            "category_name": "Seafood",
             "description": "Sweet snails stir-fried with garlic butter and lemongrass.",
             "image_url": "https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=400",
             "stock_quantity": 15,
@@ -77,7 +98,7 @@ def seed_foods(db):
         {
             "name": "Nem Nướng",
             "price": 45000,
-            "category": "Appetizer",
+            "category_name": "Appetizer",
             "description": "Grilled pork sausage served with rice paper, herbs, and dipping sauce.",
             "image_url": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
             "stock_quantity": 30,
@@ -86,7 +107,7 @@ def seed_foods(db):
         {
             "name": "Trà Đá",
             "price": 5000,
-            "category": "Drinks",
+            "category_name": "Drinks",
             "description": "Iced Vietnamese green tea - free refills!",
             "image_url": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
             "stock_quantity": None,  # Unlimited
@@ -95,7 +116,7 @@ def seed_foods(db):
         {
             "name": "Chè Ba Màu",
             "price": 25000,
-            "category": "Dessert",
+            "category_name": "Dessert",
             "description": "Three-color dessert with mung beans, red beans, and jelly in coconut milk.",
             "image_url": "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400",
             "stock_quantity": 20,
@@ -103,14 +124,18 @@ def seed_foods(db):
         },
     ]
 
-    for food_data in foods:
+    for food_data in foods_data:
+        category_name = food_data.pop("category_name")
+        food_data["category_id"] = categories[category_name].id
+
         existing = db.query(Food).filter(Food.name == food_data["name"]).first()
         if not existing:
             food = Food(**food_data)
             db.add(food)
-            print(f"Added: {food_data['name']}")
         else:
-            print(f"Skipped (exists): {food_data['name']}")
+            # Update category_id for existing foods if it's missing
+            if existing.category_id is None:
+                existing.category_id = categories[category_name].id
 
     db.commit()
 
@@ -130,12 +155,12 @@ def seed_tables(db):
 
 
 def main():
-    print("🌱 Seeding database...")
+    print("Seeding database...")
     db = SessionLocal()
     try:
         seed_foods(db)
         seed_tables(db)
-        print("✅ Seeding complete!")
+        print("Seeding complete!")
     finally:
         db.close()
 

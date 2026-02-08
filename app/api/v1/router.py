@@ -14,7 +14,7 @@ from app.api.v1.endpoints import (
     users,
 )
 
-api_router = APIRouter(redirect_slashes=False)
+api_router = APIRouter()
 
 # Authentication routes
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])

@@ -11,7 +11,7 @@ from app.schemas.user import UserResponse, UserUpdate
 router = APIRouter()
 
 
-@router.get("", response_model=list[UserResponse])
+@router.get("/", response_model=list[UserResponse])
 def get_users(
     skip: int = 0,
     limit: int = 100,

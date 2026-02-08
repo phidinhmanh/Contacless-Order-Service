@@ -180,7 +180,7 @@ def get_table_session_status(table_id: int, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/", response_model=TableResponse, status_code=201)
+@router.post("", response_model=TableResponse, status_code=201)
 def create_table(
     table_in: TableCreate,
     background_tasks: BackgroundTasks,

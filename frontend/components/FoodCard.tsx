@@ -32,7 +32,7 @@ export function FoodCard({ food }: FoodCardProps) {
     return (
         <div
             className={cn(
-                'relative bg-dark-card rounded-2xl overflow-hidden',
+                'food-card relative bg-dark-card rounded-2xl overflow-hidden',
                 'border border-dark-border',
                 'transform transition-all duration-300',
                 isUnavailable
@@ -93,6 +93,7 @@ export function FoodCard({ food }: FoodCardProps) {
                             {quantity === 0 ? (
                                 <button
                                     onClick={handleAdd}
+                                    data-testid={`add-to-cart-${food.id}`}
                                     className={cn(
                                         'flex items-center justify-center',
                                         'w-9 h-9 rounded-full',

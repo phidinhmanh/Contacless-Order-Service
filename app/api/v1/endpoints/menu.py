@@ -11,7 +11,7 @@ from app.schemas.category import CategoryResponse
 router = APIRouter()
 
 
-@router.get("/", response_model=list[FoodResponse])
+@router.get("", response_model=list[FoodResponse])
 def get_menu(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
