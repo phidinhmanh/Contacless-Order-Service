@@ -79,29 +79,31 @@ class TestOrderProcess:
         assert resp2.status_code == status.HTTP_201_CREATED
         assert resp2.json()["id"] == id1
 
-    def test_tc_order_06_race_condition(self, client, auth_headers, db_session, sample_table):
+    async def test_tc_order_06_race_condition(self, async_client, auth_headers, db_session, sample_table):
         """TC-ORDER-06: Race Condition (Row Locking)"""
+        import asyncio
         # Set stock to 1
         from app.models.food import Food
         food = Food(name="Last Stock Item", price=100, stock_quantity=1, is_available=True)
         db_session.add(food)
         db_session.commit()
         db_session.refresh(food)
-        
+
         order_data = {
             "user_id": 1,
             "table_id": sample_table.id,
             "items": [{"food_id": food.id, "quantity": 1}]
         }
-        
-        def place_order():
-            return client.post("/api/v1/orders/", json=order_data, headers=auth_headers)
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = [executor.submit(place_order) for _ in range(2)]
-            results = [f.result() for f in futures]
-            
-        status_codes = [r.status_code for r in results]
+        # Concurrent requests using asyncio.gather
+        results = await asyncio.gather(
+            async_client.post("/api/v1/orders/", json=order_data, headers=auth_headers),
+            async_client.post("/api/v1/orders/", json=order_data, headers=auth_headers),
+            return_exceptions=True
+        )
+
+        status_codes = [r.status_code for r in results if hasattr(r, "status_code")]
+        db_session.expire_all()
         db_session.refresh(food)
         assert status.HTTP_201_CREATED in status_codes
         assert status.HTTP_400_BAD_REQUEST in status_codes

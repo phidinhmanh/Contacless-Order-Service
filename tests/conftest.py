@@ -5,6 +5,7 @@ Refined for performance: Uses mocked hashing and reduced dataset sizes for fast 
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
@@ -71,6 +72,21 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
         with TestClient(app) as test_client:
             yield test_client
     
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+async def async_client(db_session: Session) -> Generator[AsyncClient, None, None]:
+    """Create an asynchronous test client with overridden dependencies."""
+    app.dependency_overrides[get_db] = override_get_db
+
+    # Patch the global engine used in main.py lifespan
+    with patch("app.db.session.engine", engine):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as ac:
+            yield ac
+
     app.dependency_overrides.clear()
 
 
