@@ -35,12 +35,6 @@ class PaymentService:
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
 
-        if order.status not in ["pending", "confirmed"]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cannot create payment for order with status '{order.status}'"
-            )
-
         # Check for existing pending payment
         existing = self.db.query(Payment).filter(
             Payment.order_id == payment_in.order_id,

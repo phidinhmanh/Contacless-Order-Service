@@ -9,7 +9,13 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:api": "jest tests/integration/api-endpoints.test.ts tests/unit/api-client.test.ts",
+    "test:api:endpoints": "jest tests/integration/api-endpoints.test.ts",
+    "test:api:client": "jest tests/unit/api-client.test.ts",
+    "test:api:watch": "jest --watch tests/integration/api-endpoints.test.ts tests/unit/api-client.test.ts",
+    "test:cancel-stock": "jest tests/integration/order-cancellation-stock.test.ts",
+    "test:cancel-stock:watch": "jest --watch tests/integration/order-cancellation-stock.test.ts"
   },
   "dependencies": {
     "clsx": "^2.1.0",

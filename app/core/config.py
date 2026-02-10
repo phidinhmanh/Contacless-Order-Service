@@ -29,7 +29,6 @@ class Settings(BaseSettings):
     VIETQR_ACCOUNT_NO: str = ""  # Restaurant's bank account number
     VIETQR_ACCOUNT_NAME: str = ""  # Account holder name for display
     VIETQR_TEMPLATE: str = "compact2"  # QR template style
-    CORS_ORIGINS: str = "*"  # Comma-separated list of allowed origins
     # Casso Webhook Configuration
     CASSO_API_KEY: str = ""  # API key from Casso.vn
     CASSO_WEBHOOK_SECRET: str = ""  # Secret for webhook signature validation

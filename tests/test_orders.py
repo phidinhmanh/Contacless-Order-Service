@@ -97,8 +97,8 @@ class TestOrderProcess:
 
         # Concurrent requests using asyncio.gather
         results = await asyncio.gather(
-            async_client.post("/api/v1/orders/", json=order_data, headers=auth_headers),
-            async_client.post("/api/v1/orders/", json=order_data, headers=auth_headers),
+            async_client.post("/api/v1/orders/", json=order_data, headers=auth_headers, follow_redirects=True),
+            async_client.post("/api/v1/orders/", json=order_data, headers=auth_headers, follow_redirects=True),
             return_exceptions=True
         )
 

@@ -140,13 +140,14 @@ async def get_auth_token(client: httpx.AsyncClient) -> Optional[str]:
         # Try to login with default admin credentials
         response = await client.post(
             f"{API_BASE_URL}/auth/login",
-            json={"email": "admin@example.com", "password": "admin123"},
+            data={"username": "0386868686", "password": "AdminPassword123!"},
             timeout=5.0
         )
         if response.status_code == 200:
             data = response.json()
             return data.get("access_token")
-    except Exception:
+    except Exception as e:
+        # print(f"Login error: {e}")
         pass
     return None
 
@@ -154,7 +155,9 @@ async def test_websocket():
     """Test WebSocket endpoint connectivity."""
     import websockets
     try:
-        async with websockets.connect(f"{WS_BASE_URL}/ws/kitchen", timeout=5) as websocket:
+        # FastAPI/Uvicorn WebSocket endpoint usually works with ws://
+        # Security is disabled in kitchen.py for development
+        async with websockets.connect(f"{WS_BASE_URL}/ws/kitchen") as websocket:
             # Just connect and disconnect
             return ("exists", "WebSocket connection successful")
     except Exception as e:

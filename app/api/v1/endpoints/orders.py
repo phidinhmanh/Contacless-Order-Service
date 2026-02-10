@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-
 from app.api.deps import get_current_table_id, get_current_user, get_db
 from app.api.v1.endpoints.kitchen import broadcast_new_order, broadcast_order_update
 from app.crud import crud_order
@@ -11,7 +10,7 @@ from app.services.order_service import OrderService
 router = APIRouter()
 
 
-@router.get("", response_model=list[OrderResponse])
+@router.get("/", response_model=list[OrderResponse])
 def get_orders(
     skip: int = 0,
     limit: int = 100,
@@ -42,7 +41,7 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
     return order
 
 
-@router.post("", response_model=OrderResponse, status_code=201)
+@router.post("/", response_model=OrderResponse, status_code=201)
 async def create_order(
     order_in: OrderCreate,
     db: Session = Depends(get_db),
@@ -114,10 +113,26 @@ async def cancel_order(
 
 @router.delete("/{order_id}", response_model=OrderResponse)
 def delete_order(order_id: int, db: Session = Depends(get_db)):
-    """Delete an order."""
-    order = crud_order.delete(db, id=order_id)
+    """Delete an order and restore food stock."""
+    # Load order with eager-loaded relationships before deletion
+    order = crud_order.get(db, id=order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Restore stock for all order items before deletion
+    from app.models.food import Food
+    for item in order.items:
+        if item.food_id:
+            food = db.query(Food).filter(Food.id == item.food_id).first()
+            if food and food.stock_quantity is not None:
+                food.stock_quantity += item.quantity
+                food.is_available = True
+    
+    # Delete the order
+    db.delete(order)
+    db.commit()
+    
+    # Return the order - it's now detached but relationships are already loaded
     return order
 
 

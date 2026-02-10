@@ -10,14 +10,17 @@ test.describe('E2E: Complete Order Flow', () => {
         await page.getByRole('button', { name: /Bắt đầu đặt món/i }).click();
 
         // 3. Wait for demographic modal and skip it
-        const skipButton = page.getByRole('button', { name: /✕/i });
-        await skipButton.waitFor({ state: 'visible' });
-        await skipButton.click();
+        const closeButton = page.locator('button').filter({ has: page.locator('svg') }).first();
+        await closeButton.waitFor({ state: 'visible', timeout: 5000 });
+        await closeButton.click();
 
         // 4. Now wait for menu page
         await page.waitForURL(/.*\/menu/);
 
-        // 5. Browse menu
+        // 5. Wait for menu items to load
+        await page.waitForSelector('.food-card', { state: 'visible', timeout: 10000 });
+
+        // Verify menu loaded successfully
         await expect(page.locator('.food-card')).not.toHaveCount(0); // Ensure items loaded
 
         // 6. Add to cart

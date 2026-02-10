@@ -101,7 +101,7 @@ def resolve_qr_token(qr_token: str, db: Session = Depends(get_db)):
     return RedirectResponse(url=f"/?table={table.id}", status_code=302)
 
 
-@router.get("", response_model=list[TableResponse])
+@router.get("/", response_model=list[TableResponse])
 def get_tables(
     skip: int = 0,
     limit: int = 100,

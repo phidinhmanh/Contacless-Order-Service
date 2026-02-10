@@ -1,3 +1,9 @@
+import os
+import sys
+
+# Add the project root to sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app.db.session import SessionLocal
 from app.models.user import User, UserRole
 from app.core.security import hash_password

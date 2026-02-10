@@ -80,7 +80,36 @@ class TestRetentionAnalytics:
         assert "rate_14d" in data
 
 
-class TestInventoryAlerts:
+    def test_customer_segments_demographics(self, client, db_session, admin_headers, create_users):
+        """TC-ANA-01: Customer Segments Demographics"""
+        # 1. Create users with specific demographics
+        user1 = create_users["registered"][0]
+        user1.gender = "male"
+        user1.age_group = "25_34"
+        
+        user2 = create_users["registered"][1]
+        user2.gender = "female"
+        user2.age_group = "18_24"
+        
+        db_session.add_all([user1, user2])
+        db_session.commit()
+        
+        # 2. Create sessions for these users
+        from app.models.table_session import TableSession
+        session1 = TableSession(table_id=1, lead_user_id=user1.id, status="closed")
+        session2 = TableSession(table_id=2, lead_user_id=user2.id, status="closed")
+        db_session.add_all([session1, session2])
+        db_session.commit()
+        
+        response = client.get("/api/v1/analytics/customers", headers=admin_headers)
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        # Verify demographics
+        assert data["demographics"]["gender"]["male"] >= 1
+        assert data["demographics"]["gender"]["female"] >= 1
+        assert data["demographics"]["age_groups"]["25_34"] >= 1
+        assert data["demographics"]["age_groups"]["18_24"] >= 1
     """TC-ANA-02"""
     
     def test_inventory_alerts_high_priority(self, client, db_session, admin_headers, sample_food):

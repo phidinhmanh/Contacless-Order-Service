@@ -496,7 +496,7 @@ def create_payments(
     payments = []
     
     paid_orders = [o for o in create_orders if o.status == OrderStatus.PAID.value] # pyright: ignore
-    payment_methods = [PaymentProvider.CASH, PaymentProvider.MOMO]
+    payment_methods = [PaymentProvider.CASH, PaymentProvider.VIETQR]
     
     for order in paid_orders:
         payment = Payment(
@@ -524,7 +524,7 @@ def sample_payment(
     payment = Payment(
         order_id=sample_order.id,
         amount=sample_order.total_price,
-        payment_method=PaymentProvider.MOMO,
+        payment_method=PaymentProvider.VIETQR,
         status=PaymentStatus.PENDING,
         transaction_id=f"TEST_{uuid.uuid4().hex[:8]}",
         created_at=datetime.now(timezone.utc),

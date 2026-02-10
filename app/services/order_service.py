@@ -4,9 +4,8 @@ Handles complex order operations that involve multiple models.
 """
 
 from fastapi import HTTPException
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import case
-from sqlalchemy.orm import Session
-
 from app.models.food import Food
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.table import Table
@@ -19,6 +18,15 @@ class OrderService:
 
     def __init__(self, db: Session):
         self.db = db
+
+    def _get_order_with_items(self, order_id: int) -> Order | None:
+        """Helper to get order with eager-loaded relationships."""
+        return (
+            self.db.query(Order)
+            .options(joinedload(Order.items).joinedload(OrderItem.food))
+            .filter(Order.id == order_id)
+            .first()
+        )
 
     def create_order(self, order_in: OrderCreate, user_id: int | None = None) -> Order:
         """
@@ -138,7 +146,7 @@ class OrderService:
         Restores food stock if cancelled successfully.
         """
         from datetime import UTC, datetime
-        order = self.db.query(Order).filter(Order.id == order_id).first()
+        order = self._get_order_with_items(order_id)
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
 
@@ -182,7 +190,7 @@ class OrderService:
         Advance order status to the next logical state.
         PENDING -> CONFIRMED -> PREPARING -> READY -> COMPLETED
         """
-        order = self.db.query(Order).filter(Order.id == order_id).first()
+        order = self._get_order_with_items(order_id)
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
 
@@ -194,6 +202,41 @@ class OrderService:
             )
 
         order.status = next_status
+        self.db.commit()
+        self.db.refresh(order)
+
+        return order
+
+    def mark_order_as_paid(self, order_id: int) -> Order:
+        """
+        Manually mark an order as paid by an admin.
+        Updates both order status and creates a completed payment record.
+        """
+        from datetime import UTC, datetime
+        from app.models.payment import Payment, PaymentStatus
+
+        order = self._get_order_with_items(order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        if order.payment_status == "paid":
+            return order
+
+        # Create a manual payment record
+        payment = Payment(
+            order_id=order.id,
+            amount=order.total_price,
+            provider="manual",
+            status=PaymentStatus.COMPLETED.value,
+            transaction_id=f"MANUAL-{order.id}-{int(datetime.now(UTC).timestamp())}",
+            completed_at=datetime.now(UTC),
+        )
+        self.db.add(payment)
+
+        # Update order status
+        order.status = "paid"
+        order.payment_status = "paid"
+
         self.db.commit()
         self.db.refresh(order)
 

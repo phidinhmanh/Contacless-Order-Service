@@ -89,25 +89,34 @@ api.interceptors.request.use(
             config.headers['Authorization'] = `Bearer ${token}`;
         }
 
+        // Debug: log API requests
+        console.log(`📡 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+
         return config;
     }
 );
-// Response interceptor - handle errors and log them
+
+// Response interceptor - handle responses and errors
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // Debug: log successful responses
+        console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
+        return response;
+    },
     (error: AxiosError) => {
         const endpoint = error.config?.url || 'unknown';
         const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
         const status = error.response?.status || null;
         const responseData = error.response?.data;
-        const requestData = error.config?.data;
 
-        // Status handled by switch below
-        const message = extractErrorMessage(responseData);
+        // Debug: log failed responses
+        console.error(`❌ API Error: ${method} ${endpoint} - Status: ${status} - Message: ${error.message}`);
 
         // Log error to error stack
         errorLogger.log(createApiErrorFromAxios(error, endpoint, method));
 
+        // Status handled by switch below
+        const message = extractErrorMessage(responseData);
 
         // Handle specific status codes
         switch (status) {
@@ -150,14 +159,16 @@ export interface ApiErrorResponse {
 
 // Helper to check if error is ApiErrorResponse
 export function isApiError(error: unknown): error is ApiErrorResponse {
-    return (
-        typeof error === 'object' &&
-        error !== null &&
-        'message' in error &&
-        typeof (error as ApiErrorResponse).message === 'string'
-    );
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error && // ✅ MUST check for status
+    'message' in error &&
+    typeof (error as ApiErrorResponse).message === 'string' &&
+    (typeof (error as ApiErrorResponse).status === 'number' || 
+     (error as ApiErrorResponse).status === null)
+  );
 }
-
 // Get safe error message from any error
 export function getErrorMessage(error: unknown): string {
     if (isApiError(error)) {

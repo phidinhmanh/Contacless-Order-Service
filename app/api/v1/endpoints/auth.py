@@ -83,8 +83,6 @@ def login(
         )
 
     if not verify_password(form_data.password, user.hashed_password):
-        print(hash_password(form_data.password), flush=True)
-        print(user.hashed_password, flush=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect phone number or password",

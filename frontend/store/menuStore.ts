@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import api from '@/lib/api';
+import api, { isApiError } from '@/lib/api';
 import type { Food } from '@/lib/types';
 
 // Categories can be strings or objects from API
@@ -12,14 +12,18 @@ interface MenuState {
     lastFetched: number | null;
     isLoading: boolean;
     error: string | null;
+    retryCount: number;
 
     // Actions
     fetchMenu: (force?: boolean) => Promise<void>;
     clearCache: () => void;
+    clearError: () => void;
 }
 
 // Cache duration: 5 minutes
 const CACHE_DURATION = 5 * 60 * 1000;
+// Maximum retry attempts for API failures
+const MAX_RETRY_COUNT = 3;
 
 export const useMenuStore = create<MenuState>()(
     persist(
@@ -29,6 +33,7 @@ export const useMenuStore = create<MenuState>()(
             lastFetched: null,
             isLoading: false,
             error: null,
+            retryCount: 0,
 
             fetchMenu: async (force = false) => {
                 const state = get();
@@ -58,6 +63,7 @@ export const useMenuStore = create<MenuState>()(
                         lastFetched: Date.now(),
                         isLoading: false,
                         error: null,
+                        retryCount: 0,
                     });
 
                     console.log('✅ Menu cached:', {
@@ -65,11 +71,44 @@ export const useMenuStore = create<MenuState>()(
                         foods: foodsRes.data.length,
                     });
                 } catch (err: any) {
-                    console.error('Failed to fetch menu:', err);
-                    set({
-                        error: 'Không thể tải thực đơn. Vui lòng thử lại.',
-                        isLoading: false,
+                    const currentRetry = state.retryCount;
+                    const errorStatus = err?.status || err?.response?.status || null;
+                    const errorMessage = err?.message || 'Unknown error';
+
+                    console.error('❌ Failed to fetch menu:', {
+                        error: err,
+                        status: errorStatus,
+                        message: errorMessage,
+                        retryCount: currentRetry,
                     });
+
+                    // Check if should retry (only for network errors or 5xx server errors)
+                    const isRetryable = !errorStatus || (errorStatus >= 500 || errorStatus === 0);
+
+                    if (isRetryable && currentRetry < MAX_RETRY_COUNT) {
+                        console.log(`🔄 Retrying menu fetch (attempt ${currentRetry + 1}/${MAX_RETRY_COUNT})...`);
+                        set({ retryCount: currentRetry + 1 });
+
+                        // Retry after delay
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (currentRetry + 1)));
+
+                        // Recursive retry
+                        return get().fetchMenu(force);
+                    }
+
+                    // Handle auth errors specifically
+                    if (errorStatus === 401) {
+                        console.warn('🔐 Menu fetch failed due to auth error (401)');
+                        set({
+                            error: 'Vui lòng đăng nhập lại để xem thực đơn',
+                            isLoading: false,
+                        });
+                    } else {
+                        set({
+                            error: 'Không thể tải thực đơn. Vui lòng thử lại.',
+                            isLoading: false,
+                        });
+                    }
                 }
             },
 
@@ -79,8 +118,13 @@ export const useMenuStore = create<MenuState>()(
                     foods: [],
                     lastFetched: null,
                     error: null,
+                    retryCount: 0,
                 });
                 console.log('🗑️ Menu cache cleared');
+            },
+
+            clearError: () => {
+                set({ error: null });
             },
         }),
         {

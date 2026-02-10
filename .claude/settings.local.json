@@ -29,7 +29,9 @@
       "Bash(PYTHONIOENCODING=utf-8 PYTHONPATH=. uv run:*)",
       "Bash(PYTHONIOENCODING=utf-8 PYTHONPATH=. uv:*)",
       "Bash(export:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(jq:*)",
+      "Bash(npm run test:e2e)"
     ]
   }
 }

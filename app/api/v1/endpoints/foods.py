@@ -22,7 +22,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 
-@router.get("", response_model=list[FoodResponse])
+@router.get("/", response_model=list[FoodResponse])
 def get_menu(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
@@ -52,7 +52,7 @@ def get_food(food_id: int, db: Annotated[Session, Depends(get_db)]):
     return food
 
 
-@router.post("", response_model=FoodResponse, status_code=201)
+@router.post("/", response_model=FoodResponse, status_code=201)
 def create_food(
     food_in: FoodCreate,
     background_tasks: BackgroundTasks,

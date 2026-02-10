@@ -145,6 +145,17 @@ export function DemographicModal({ isOpen, onClose, onSubmit }: DemographicModal
                             <div className={cn("w-1.5 h-1.5 rounded-full", step === 'gender' ? "bg-primary-500 w-4" : "bg-dark-border")} />
                             <div className={cn("w-1.5 h-1.5 rounded-full", step === 'age' ? "bg-primary-500 w-4" : "bg-dark-border")} />
                         </div>
+
+                        {/* Skip button - allows users to proceed without providing demographics */}
+                        <div className="mt-4 pt-4 border-t border-dark-border">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="w-full text-sm text-text-muted hover:text-text-secondary transition-colors py-2"
+                            >
+                                Bỏ qua
+                            </button>
+                        </div>
                     </motion.div>
                 </div>
             )}

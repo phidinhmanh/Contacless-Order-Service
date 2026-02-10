@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
     TrendingUp,
@@ -11,79 +11,59 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
-import api from '@/lib/api';
 
-interface StatsData {
-    todayRevenue: number;
-    todayOrders: number;
-    pendingOrders: number;
-    activeTables: number;
+// Hooks
+import { useDashboardData } from '@/hooks/useDashboardData';
+
+// Types
+import { RecentOrder } from '@/lib/types/analytics';
+
+/**
+ * Admin Dashboard Page
+ * 
+ * Refactored to use SOLID principles:
+ * - Single Responsibility: Component only handles UI rendering
+ * - Data fetching delegated to useDashboardData hook
+ * - Status helpers extracted for reuse
+ */
+
+// Status helper functions - extracted for reusability
+export function getStatusColor(status: string): string {
+    switch (status) {
+        case 'pending': return 'bg-yellow-500/20 text-yellow-400';
+        case 'confirmed': return 'bg-blue-500/20 text-blue-400';
+        case 'preparing': return 'bg-orange-500/20 text-orange-400';
+        case 'ready': return 'bg-green-500/20 text-green-400';
+        default: return 'bg-gray-500/20 text-gray-400';
+    }
 }
 
-interface RecentOrder {
-    id: number;
-    table_id: number;
-    status: string;
-    total_price: number;
-    created_at: string;
-    items: { food_name: string; quantity: number }[];
+export function getStatusLabel(status: string): string {
+    switch (status) {
+        case 'pending': return 'Chờ xác nhận';
+        case 'confirmed': return 'Đã xác nhận';
+        case 'preparing': return 'Đang chuẩn bị';
+        case 'ready': return 'Sẵn sàng';
+        case 'completed': return 'Hoàn thành';
+        case 'cancelled': return 'Đã hủy';
+        default: return status;
+    }
+}
+
+// Stats card configuration
+interface StatsCardConfig {
+    label: string;
+    value: string;
+    icon: React.ElementType;
+    color: string;
+    highlight?: boolean;
 }
 
 export default function AdminDashboard() {
-    const [stats, setStats] = useState<StatsData>({
-        todayRevenue: 0,
-        todayOrders: 0,
-        pendingOrders: 0,
-        activeTables: 0,
-    });
-    const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    // Use dashboard hook - Single Responsibility for data fetching
+    const { stats, recentOrders, isLoading } = useDashboardData();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Use analytics endpoint for accurate stats
-                const [analyticsRes, ordersRes, tablesRes] = await Promise.all([
-                    api.get('/analytics/revenue'),
-                    api.get('/orders/?limit=50'),
-                    api.get('/tables/'),
-                ]);
-
-                const analytics = analyticsRes.data;
-                const orders = ordersRes.data as RecentOrder[];
-
-                // Filter for pending orders
-                const pendingOrders = orders.filter(o =>
-                    ['pending', 'confirmed', 'preparing'].includes(o.status)
-                );
-
-                // Count tables with active orders
-                const activeTables = (tablesRes.data as { status: string }[])
-                    .filter(t => t.status === 'occupied').length;
-
-                setStats({
-                    todayRevenue: analytics.total_revenue || 0,
-                    todayOrders: analytics.order_count || 0,
-                    pendingOrders: pendingOrders.filter(o => o.status === 'pending').length,
-                    activeTables: activeTables,
-                });
-
-                // Get recent pending orders
-                setRecentOrders(pendingOrders.slice(0, 5));
-            } catch (error) {
-                console.error('Failed to fetch dashboard data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
-        // Refresh every 30 seconds
-        const interval = setInterval(fetchData, 30000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const statsCards = [
+    const statsCards: StatsCardConfig[] = [
         {
             label: 'Doanh thu hôm nay',
             value: formatPrice(stats.todayRevenue),
@@ -110,28 +90,6 @@ export default function AdminDashboard() {
             color: 'from-purple-500 to-violet-600',
         },
     ];
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'pending': return 'bg-yellow-500/20 text-yellow-400';
-            case 'confirmed': return 'bg-blue-500/20 text-blue-400';
-            case 'preparing': return 'bg-orange-500/20 text-orange-400';
-            case 'ready': return 'bg-green-500/20 text-green-400';
-            default: return 'bg-gray-500/20 text-gray-400';
-        }
-    };
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'pending': return 'Chờ xác nhận';
-            case 'confirmed': return 'Đã xác nhận';
-            case 'preparing': return 'Đang chuẩn bị';
-            case 'ready': return 'Sẵn sàng';
-            case 'completed': return 'Hoàn thành';
-            case 'cancelled': return 'Đã hủy';
-            default: return status;
-        }
-    };
 
     if (isLoading) {
         return (
@@ -225,35 +183,85 @@ export default function AdminDashboard() {
                 ) : (
                     <div className="divide-y divide-dark-border">
                         {recentOrders.map((order) => (
-                            <div key={order.id} className="p-4 hover:bg-dark-border/30 transition-colors">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-3">
-                                        <span className="font-mono font-bold text-primary-400">
-                                            #{order.id.toString().padStart(4, '0')}
-                                        </span>
-                                        <span className="text-text-muted">•</span>
-                                        <span className="text-text-secondary">Bàn {order.table_id}</span>
-                                    </div>
-                                    <span className={cn(
-                                        'px-2 py-1 rounded-full text-xs font-medium',
-                                        getStatusColor(order.status)
-                                    )}>
-                                        {getStatusLabel(order.status)}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm text-text-muted">
-                                        {order.items?.slice(0, 2).map(i => `${i.food_name} x${i.quantity}`).join(', ')}
-                                        {order.items?.length > 2 && ` +${order.items.length - 2} món`}
-                                    </p>
-                                    <span className="font-medium text-text-primary">
-                                        {formatPrice(order.total_price)}
-                                    </span>
-                                </div>
-                            </div>
+                            <OrderRow key={order.id} order={order} />
                         ))}
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+// ============================================
+// Reusable Components
+// ============================================
+
+/**
+ * Order Row Component
+ * Extracted for Single Responsibility - handles order display only
+ */
+function OrderRow({ order }: { order: RecentOrder }) {
+    return (
+        <div key={order.id} className="p-4 hover:bg-dark-border/30 transition-colors">
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold text-primary-400">
+                        #{order.id.toString().padStart(4, '0')}
+                    </span>
+                    <span className="text-text-muted">•</span>
+                    <span className="text-text-secondary">Bàn {order.table_id}</span>
+                </div>
+                <span className={cn(
+                    'px-2 py-1 rounded-full text-xs font-medium',
+                    getStatusColor(order.status)
+                )}>
+                    {getStatusLabel(order.status)}
+                </span>
+            </div>
+            <div className="flex items-center justify-between">
+                <p className="text-sm text-text-muted">
+                    {order.items?.slice(0, 2).map(i => `${i.food_name} x${i.quantity}`).join(', ')}
+                    {order.items?.length > 2 && ` +${order.items.length - 2} món`}
+                </p>
+                <span className="font-medium text-text-primary">
+                    {formatPrice(order.total_price)}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Stats Card Component
+ * Extracted for reusability and Single Responsibility
+ */
+export function StatsCard({
+    label,
+    value,
+    icon: Icon,
+    color,
+    highlight = false
+}: StatsCardConfig) {
+    return (
+        <div
+            className={cn(
+                'relative bg-dark-card rounded-2xl p-4 border border-dark-border overflow-hidden',
+                highlight && 'ring-2 ring-orange-500/50'
+            )}
+        >
+            <div className={cn(
+                'absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl opacity-20',
+                `bg-gradient-to-br ${color}`
+            )} />
+            <div className="relative">
+                <div className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
+                    `bg-gradient-to-br ${color}`
+                )}>
+                    <Icon size={20} className="text-white" />
+                </div>
+                <p className="text-2xl font-bold text-text-primary">{value}</p>
+                <p className="text-sm text-text-muted">{label}</p>
             </div>
         </div>
     );

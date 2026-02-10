@@ -4,12 +4,12 @@ Provides revenue dashboards and export functionality.
 """
 
 from datetime import UTC, datetime
-from io import BytesIO
 from typing import Annotated
-
+from io import BytesIO
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+import pytz
 
 from app.api.deps import get_db, require_role
 from app.models.user import User, UserRole
@@ -18,21 +18,61 @@ from app.services.analytics_service import AnalyticsService
 router = APIRouter()
 
 
+def parse_vietnam_datetime(value: str | None) -> datetime | None:
+    """Parse datetime string with Vietnam timezone (+07:00 or  07:00) to UTC datetime."""
+    if not value:
+        return None
+    
+    try:
+        # Handle ISO format with +07:00 or space+07:00 timezone (URL decoding issue)
+        # Normalize the timezone separator
+        value = value.replace(' ', '+')
+        
+        if '+07:00' in value:
+            dt_str = value.replace('+07:00', '')
+            # Parse the datetime part
+            dt = datetime.fromisoformat(dt_str)
+            # Create timezone-aware datetime for Vietnam
+            vn_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+            dt = vn_tz.localize(dt)
+            # Convert to UTC
+            return dt.astimezone(UTC)
+        elif '-07:00' in value:
+            dt_str = value.replace('-07:00', '')
+            dt = datetime.fromisoformat(dt_str)
+            vn_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+            dt = vn_tz.localize(dt)
+            return dt.astimezone(UTC)
+        else:
+            # Parse as-is and assume UTC
+            dt = datetime.fromisoformat(value)
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=UTC)
+            return dt.astimezone(UTC)
+    except (ValueError, AttributeError) as e:
+        print(f"Error parsing datetime '{value}': {e}")
+        return None
+
+
 @router.get("/revenue")
 def get_revenue_summary(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
-    start_date: datetime | None = Query(None, description="Start date for report"),
-    end_date: datetime | None = Query(None, description="End date for report"),
+    start_date: str | None = Query(None, description="Start date for report (ISO format with timezone)"),
+    end_date: str | None = Query(None, description="End date for report (ISO format with timezone)"),
 ):
     """
     Get revenue summary for a date range.
     Defaults to last 24 hours. Requires ADMIN or MANAGER role.
     
-    Updates every 5 minutes (via frontend polling or caching).
+    Dates should be in Vietnam timezone (ICT, UTC+7) with format: YYYY-MM-DDTHH:MM:SS+07:00
     """
+    # Parse timezone-aware datetime strings to UTC
+    start_dt = parse_vietnam_datetime(start_date)
+    end_dt = parse_vietnam_datetime(end_date)
+    
     analytics = AnalyticsService(db)
-    return analytics.get_revenue_summary(start_date, end_date)
+    return analytics.get_revenue_summary(start_dt, end_dt)
 
 
 @router.get("/peak-hours")

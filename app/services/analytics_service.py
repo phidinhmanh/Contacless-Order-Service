@@ -7,6 +7,22 @@ from sqlalchemy.orm import Session
 from app.models.food import Food
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.table_session import TableSession
+from app.models.user import User
+
+
+def convert_to_utc(dt: datetime | None) -> datetime | None:
+    """Convert a datetime to UTC. Handles timezone-aware and naive datetimes."""
+    if dt is None:
+        return None
+    
+    vn_tz = pytz.timezone("Asia/Ho_Chi_Minh")
+    
+    if dt.tzinfo is None:
+        # Naive datetime - assume Vietnam timezone
+        dt = vn_tz.localize(dt)
+    
+    return dt.astimezone(UTC)
+
 
 class AnalyticsService:
     def __init__(self, db: Session):
@@ -17,13 +33,20 @@ class AnalyticsService:
             OrderStatus.CONFIRMED.value,
             OrderStatus.COMPLETED.value
         ]
-
+    
     def get_revenue_summary(self, start_date: datetime = None, end_date: datetime = None) -> Dict[str, Any]:
+        # Convert input datetimes to UTC
+        start_date = convert_to_utc(start_date)
+        end_date = convert_to_utc(end_date)
+        
         if not start_date:
             now_vn = datetime.now(UTC).astimezone(pytz.timezone(self.tz))
             start_date = now_vn.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(UTC)
         end_date = end_date or datetime.now(UTC)
-
+        
+        print(f"[DEBUG] Querying revenue from {start_date} to {end_date}")
+        print(f"[DEBUG] Valid statuses: {self.valid_statuses}")
+        
         res = self.db.query(
             func.sum(Order.total_price).label("revenue"),
             func.count(Order.id).label("count")
@@ -31,10 +54,11 @@ class AnalyticsService:
             Order.created_at.between(start_date, end_date),
             Order.status.in_(self.valid_statuses)
         ).first()
-
+        
+        print(f"[DEBUG] Query result: revenue={res.revenue}, count={res.count}")
+        
         rev = float(res.revenue or 0)
         count = int(res.count or 0)
-
         return {
             "period": {"start": start_date.isoformat(), "end": end_date.isoformat()},
             "total_revenue": round(rev, 2),
@@ -44,23 +68,36 @@ class AnalyticsService:
         }
 
     def get_customer_segments(self) -> Dict[str, Any]:
-        """Fixed raw SQL using double quotes for aliases and .mappings() to prevent NoSuchColumnError."""
+        """Fixed raw SQL using double quotes for aliases and .mappings() to prevent NoSuchColumnError.
+        Includes demographic breakdowns from the User model.
+        """
         sql = text("""
             SELECT 
-                COUNT(id) as total_sessions,
-                COUNT(DISTINCT lead_user_id) FILTER (WHERE lead_user_id IS NOT NULL) as unique_auth_users,
-                COUNT(id) FILTER (WHERE lead_user_id IS NULL) as anon_sessions,
+                COUNT(s.id) as total_sessions,
+                COUNT(DISTINCT s.lead_user_id) FILTER (WHERE s.lead_user_id IS NOT NULL) as unique_auth_users,
+                COUNT(s.id) FILTER (WHERE s.lead_user_id IS NULL) as anon_sessions,
                 (SELECT COUNT(*) FROM (
                     SELECT lead_user_id FROM table_sessions 
                     WHERE lead_user_id IS NOT NULL 
                     GROUP BY lead_user_id HAVING COUNT(id) > 1
-                ) as sub_retention) as returning_count
-            FROM table_sessions
+                ) as sub_retention) as returning_count,
+                -- Demographics
+                COUNT(u.id) FILTER (WHERE u.gender = 'male') as male_count,
+                COUNT(u.id) FILTER (WHERE u.gender = 'female') as female_count,
+                COUNT(u.id) FILTER (WHERE u.gender = 'other') as other_gender_count,
+                COUNT(u.id) FILTER (WHERE u.age_group = 'under_18') as age_under_18,
+                COUNT(u.id) FILTER (WHERE u.age_group = '18_24') as age_18_24,
+                COUNT(u.id) FILTER (WHERE u.age_group = '25_34') as age_25_34,
+                COUNT(u.id) FILTER (WHERE u.age_group = '35_44') as age_35_44,
+                COUNT(u.id) FILTER (WHERE u.age_group = '45+') as age_45_plus
+            FROM table_sessions s
+            LEFT JOIN users u ON s.lead_user_id = u.id
         """)
         
         # .mappings() is the key to fixing your "NoSuchColumnError"
         res = self.db.execute(sql).mappings().first()
-        
+
+        print(f"[DEBUG] Query result: {res}")
         total_customers = (res['unique_auth_users'] or 0) + (res['anon_sessions'] or 0)
         returning = res['returning_count'] or 0
         new_customers = total_customers - returning
@@ -69,7 +106,21 @@ class AnalyticsService:
             "total_customers": total_customers,
             "new_customers": new_customers,
             "returning_customers": returning,
-            "retention_rate": round((returning / total_customers * 100), 2) if total_customers > 0 else 0
+            "retention_rate": round((returning / total_customers * 100), 2) if total_customers > 0 else 0,
+            "demographics": {
+                "gender": {
+                    "male": res['male_count'] or 0,
+                    "female": res['female_count'] or 0,
+                    "other": res['other_gender_count'] or 0
+                },
+                "age_groups": {
+                    "under_18": res['age_under_18'] or 0,
+                    "18_24": res['age_18_24'] or 0,
+                    "25_34": res['age_25_34'] or 0,
+                    "35_44": res['age_35_44'] or 0,
+                    "45+": res['age_45_plus'] or 0
+                }
+            }
         }
 
     def get_popular_items(self, days: int = 30, limit: int = 10) -> List[Dict[str, Any]]:

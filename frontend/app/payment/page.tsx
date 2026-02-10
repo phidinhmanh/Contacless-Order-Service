@@ -167,7 +167,7 @@ function PaymentSelectionContent() {
             <AnimatePresence>
                 {showQRModal && vietqrPayment && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-dark-card border border-dark-border rounded-3xl w-full max-w-sm overflow-hidden">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-dark-card border border-dark-border rounded-3xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
                             <div className="flex items-center justify-between p-4 border-b border-dark-border">
                                 <h3 className="text-lg font-bold text-text-primary">Quét mã QR để thanh toán</h3>
                                 <button onClick={handleCloseModal} className="w-8 h-8 rounded-full bg-dark-bg flex items-center justify-center text-text-muted hover:text-text-primary"><X size={18} /></button>
@@ -183,7 +183,7 @@ function PaymentSelectionContent() {
                                 ) : (
                                     <>
                                         <div className="bg-white rounded-2xl p-4 flex items-center justify-center">
-                                            <img src={vietqrPayment.qr_url} alt="VietQR" className="w-full max-w-[256px] h-auto" />
+                                            <img src={vietqrPayment.qr_url} alt="VietQR Payment Code" className="w-full max-w-[240px] h-auto object-contain" />
                                         </div>
                                         <div className="text-center">
                                             <p className="text-text-muted text-sm">Số tiền</p>
