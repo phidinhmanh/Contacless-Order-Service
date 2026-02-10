@@ -97,6 +97,7 @@ def require_role(*allowed_roles: UserRole):
     def role_checker(
         current_user: Annotated[User, Depends(get_current_user)],
     ) -> User:
+        print("DEBUG: current_user.role", current_user.role)
         if current_user.role not in [r.value for r in allowed_roles]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
