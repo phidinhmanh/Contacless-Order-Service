@@ -12,11 +12,13 @@ class CRUDCategory(CRUDBase[Category, CategoryCreate, CategoryUpdate]):
         """Get category by name."""
         return db.query(Category).filter(Category.name == name).first()
 
-    def get_active(self, db: Session, *, skip: int = 0, limit: int = 100) -> list[Category]:
+    def get_active(
+        self, db: Session, *, skip: int = 0, limit: int = 100
+    ) -> list[Category]:
         """Get only active categories, ordered by display_order."""
         return (
             db.query(Category)
-            .filter(Category.is_active == True)
+            .filter(Category.is_active)
             .order_by(Category.display_order, Category.name)
             .offset(skip)
             .limit(limit)

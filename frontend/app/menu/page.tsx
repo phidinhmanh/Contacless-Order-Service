@@ -14,8 +14,7 @@ import { OutOfStockPopup } from '@/components/OutOfStockPopup';
 
 import { useCartStore } from '@/store/cartStore';
 import { useMenuStore } from '@/store/menuStore';
-import api from '@/lib/api';
-import type { CreateOrderRequest } from '@/lib/types';
+import { ordersApi} from '@/lib/api';
 
 export default function MenuPage() {
     const router = useRouter();
@@ -97,34 +96,34 @@ export default function MenuPage() {
 
         setIsOrdering(true);
         try {
-            const orderRequest: CreateOrderRequest = {
-                table_id: tableId,
+            const orderRequest = {
+                table_id: Number(tableId),
                 items: items.map((item) => ({
-                    food_id: item.food.id,
+                    food_id: Number(item.food.id),
                     quantity: item.quantity,
                 })),
                 special_instructions: specialInstructions || undefined,
             };
 
-            const response = await api.post('/orders/', orderRequest);
-            const orderId = response.data.id;
+            const response = await ordersApi.create(orderRequest);
+            const orderId = response.id;
 
             clearCart();
             setIsCartOpen(false);
             router.push(`/order/${orderId}`);
         } catch (err: any) {
             const errorMessage = err.message || '';
-            
+
             // Check if it's a stock-related error
-            if (errorMessage.includes('sold out') || 
+            if (errorMessage.includes('sold out') ||
                 errorMessage.includes('insufficient stock') ||
                 errorMessage.includes('hết') ||
                 errorMessage.includes('không đủ')) {
-                
+
                 // Extract food name from error message if available
                 const foodMatch = errorMessage.match(/Food '([^']+)'/);
                 const foodName = foodMatch ? foodMatch[1] : null;
-                
+
                 // Close cart drawer to prevent overlap with out-of-stock popup
                 setIsCartOpen(false);
                 setOutOfStockFood(foodName);

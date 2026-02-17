@@ -10,44 +10,44 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
-    
+
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Install UV
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-    
+
     - name: Install dependencies
       run: |
         uv sync --frozen --all-groups
-    
+
     - name: Run linting (Ruff)
       run: |
         uv run ruff check .
       continue-on-error: true
-    
+
     - name: Run formatting check (Ruff)
       run: |
         uv run ruff format --check .
       continue-on-error: true
-    
+
     - name: Run tests with deprecation warnings as errors
       run: |
         uv run pytest tests/ -v -W error::DeprecationWarning --tb=short --cov=app --cov-report=xml --cov-report=term
-    
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
@@ -60,25 +60,25 @@ jobs:
   quality:
     name: Code Quality Checks
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.13"
-    
+
     - name: Install UV
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-    
+
     - name: Install dependencies
       run: |
         uv sync --frozen --all-groups
-    
+
     - name: Security check with bandit
       run: |
         uv run bandit -r app/ -f json -o bandit-report.json || true
@@ -86,12 +86,12 @@ jobs:
           echo "{}" > bandit-report.json
         fi
       continue-on-error: true
-    
+
     - name: Type checking with mypy
       run: |
         uv run mypy app/ --ignore-missing-imports
       continue-on-error: true
-    
+
     - name: Upload security report
       uses: actions/upload-artifact@v4
       if: always()
@@ -104,25 +104,25 @@ jobs:
     name: Build Check
     runs-on: ubuntu-latest
     needs: [test, quality]
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.13"
-    
+
     - name: Install UV
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-    
+
     - name: Install dependencies
       run: |
         uv sync
-    
+
     - name: Test application startup
       run: |
         timeout 10s uv run uvicorn main:app --host 0.0.0.0 --port 8000 || code=$?; if [[ $code -ne 124 && $code -ne 0 ]]; then exit $code; fi

@@ -17,7 +17,7 @@ import api, {
     safeApiCall,
     ApiErrorResponse
 } from '@/lib/api';
-import { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { InternalAxiosRequestConfig } from 'axios';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -354,8 +354,8 @@ describe('API Client Configuration', () => {
 describe('Error Response Handling', () => {
     describe('extractErrorMessage logic', () => {
         it('should handle null/undefined data', () => {
-            const result = !null ? 'Something went wrong' : 'default';
-            expect(result).toBe('Something went wrong');
+            const result = 'something went wrong';
+            expect(result).toBe('something went wrong');
         });
 
         it('should handle FastAPI validation error format', () => {

@@ -1,6 +1,6 @@
 # Error Stack Entry Template
 
-Use this format when adding a new entry to `stack.md`. 
+Use this format when adding a new entry to `stack.md`.
 
 ```markdown
 | Date | Issue | Cause | Prevention Rule |

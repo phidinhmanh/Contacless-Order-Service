@@ -35,7 +35,8 @@
       "Bash(docker compose -f docker-compose.prod.yml config --services)",
       "mcp__postgres__list_objects",
       "mcp__postgres__get_object_details",
-      "mcp__postgres__execute_sql"
+      "mcp__postgres__execute_sql",
+      "Bash(dir tests)"
     ]
   }
 }

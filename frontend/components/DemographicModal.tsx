@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Calendar, Check, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { cn } from '@/lib/utils';
 

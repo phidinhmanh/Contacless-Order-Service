@@ -14,7 +14,7 @@ import {
     ImageIcon
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
-import api from '@/lib/api';
+import { foodsApi, categoriesApi } from '@/lib/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -85,12 +85,12 @@ export default function FoodManagementPage() {
             const params: Record<string, string> = { include_unavailable: 'true' };
             if (selectedCategory !== '') params.category_id = String(selectedCategory);
 
-            const [foodsRes, categoriesRes] = await Promise.all([
-                api.get('/foods/', { params }),
-                api.get('/categories')
+            const [foodsData, categoriesData] = await Promise.all([
+                foodsApi.list(params),
+                categoriesApi.list()
             ]);
-            setFoods(foodsRes.data);
-            setCategories(categoriesRes.data);
+            setFoods(foodsData);
+            setCategories(categoriesData);
         } catch (err: any) {
             setError(err.message || 'Không thể tải dữ liệu');
         } finally {
@@ -132,9 +132,9 @@ export default function FoodManagementPage() {
 
         try {
             if (editingFood) {
-                await api.put(`/foods/${editingFood.id}`, formData);
+                await foodsApi.update(editingFood.id, formData);
             } else {
-                await api.post('/foods/', formData);
+                await foodsApi.create(formData);
             }
             setShowModal(false);
             fetchData();
@@ -147,7 +147,7 @@ export default function FoodManagementPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await api.delete(`/foods/${id}`);
+            await foodsApi.delete(id);
             setDeletingId(null);
             fetchData();
         } catch (err: any) {
@@ -157,7 +157,7 @@ export default function FoodManagementPage() {
 
     const handleStockUpdate = async (id: number, stock_quantity: number) => {
         try {
-            await api.patch(`/foods/${id}/stock`, { stock_quantity });
+            await foodsApi.updateStock(id, stock_quantity);
             fetchData();
         } catch (err: any) {
             setError(err.message || 'Lỗi khi cập nhật tồn kho');
@@ -166,7 +166,7 @@ export default function FoodManagementPage() {
 
     const toggleAvailability = async (food: Food) => {
         try {
-            await api.put(`/foods/${food.id}`, { is_available: !food.is_available });
+            await foodsApi.toggleAvailability(food.id, !food.is_available);
             fetchData();
         } catch (err: any) {
             setError(err.message || 'Lỗi khi cập nhật trạng thái');
@@ -176,12 +176,7 @@ export default function FoodManagementPage() {
     const handleImageUpload = async (foodId: number, file: File) => {
         setUploadingId(foodId);
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            await api.post(`/foods/${foodId}/image`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            await foodsApi.uploadImage(foodId, file);
             fetchData();
         } catch (err: any) {
             setError(err.message || 'Lỗi khi tải ảnh lên');

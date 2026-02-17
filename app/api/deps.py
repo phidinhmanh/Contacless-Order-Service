@@ -12,7 +12,7 @@ from app.core.security import decode_token, verify_token
 from app.db.session import SessionLocal
 from app.models.user import User, UserRole
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login')
 
 
 def get_current_table_id(
@@ -25,7 +25,7 @@ def get_current_table_id(
     payload = decode_token(token)
     if not payload:
         return None
-    return payload.get("table_id")
+    return payload.get('table_id')
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -50,15 +50,15 @@ def get_current_user(
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
     )
 
-    payload = verify_token(token, token_type="access")
+    payload = verify_token(token, token_type='access')  # nosec
     if payload is None:
         raise credentials_exception
 
-    user_id = payload.get("sub")
+    user_id = payload.get('sub')
     if user_id is None:
         raise credentials_exception
 
@@ -69,7 +69,7 @@ def get_current_user(
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is deactivated",
+            detail='User account is deactivated',
         )
 
     return user
@@ -82,7 +82,7 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Inactive user",
+            detail='Inactive user',
         )
     return current_user
 
@@ -90,18 +90,18 @@ def get_current_active_user(
 def require_role(*allowed_roles: UserRole):
     """
     Dependency factory that requires specific roles.
-    
+
     Usage:
         @router.get("/admin-only", dependencies=[Depends(require_role(UserRole.ADMIN))])
     """
+
     def role_checker(
         current_user: Annotated[User, Depends(get_current_user)],
     ) -> User:
-        print("DEBUG: current_user.role", current_user.role)
         if current_user.role not in [r.value for r in allowed_roles]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Insufficient permissions. Required: {[r.value for r in allowed_roles]}",
+                detail=f'Insufficient permissions. Required: {[r.value for r in allowed_roles]}',
             )
         return current_user
 
@@ -111,7 +111,9 @@ def require_role(*allowed_roles: UserRole):
 # Optional auth - returns None if no token provided
 def get_optional_user(
     db: Annotated[Session, Depends(get_db)],
-    token: str | None = Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)),
+    token: str | None = Depends(
+        OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login', auto_error=False)
+    ),
 ) -> User | None:
     """
     Get current user if authenticated, None otherwise.
@@ -120,11 +122,11 @@ def get_optional_user(
     if token is None:
         return None
 
-    payload = verify_token(token, token_type="access")
+    payload = verify_token(token, token_type='access')
     if payload is None:
         return None
 
-    user_id = payload.get("sub")
+    user_id = payload.get('sub')
     if user_id is None:
         return None
 

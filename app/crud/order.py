@@ -25,13 +25,13 @@ class CRUDOrder(CRUDBase[Order, OrderCreate, OrderUpdate]):
         """Get all orders for a table."""
         return db.query(Order).filter(Order.table_id == table_id).all()
 
-    def get_by_status(self, db: Session, *, status: str) -> list[Order]:
-        """Get all orders with a specific status."""
+    def get_by_status(self, db: Session, *, status: str | list[str]) -> list[Order]:
+        """Get all orders with a specific status or list of statuses."""
+        if isinstance(status, list):
+            return db.query(Order).filter(Order.status.in_(status)).all()
         return db.query(Order).filter(Order.status == status).all()
 
-    def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100
-    ) -> list[Order]:
+    def get_multi(self, db: Session, *, skip: int = 0, limit: int = 100) -> list[Order]:
         """Get multiple orders with pagination and eager-loaded relationships."""
         return (
             db.query(Order)

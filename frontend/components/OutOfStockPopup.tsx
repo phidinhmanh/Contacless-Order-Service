@@ -3,7 +3,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface OutOfStockPopupProps {
     isOpen: boolean;

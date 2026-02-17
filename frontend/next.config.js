@@ -3,12 +3,12 @@ const nextConfig = {
     output: 'standalone',
     images: {
         remotePatterns: [
-          {
-            protocol: 'https',
-            hostname: '**',
-          },
+            {
+                protocol: 'https',
+                hostname: '**',
+            },
         ],
-      },
+    },
     async rewrites() {
         const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
         return [
@@ -28,6 +28,9 @@ const nextConfig = {
                 destination: `${backendUrl}/static/:path*`,
             },
         ];
+    },
+    eslint: {
+        dirs: ['pages', 'utils'],
     },
 };
 

@@ -89,6 +89,7 @@ export interface GuestAuthResponse {
     access_token: string;
     refresh_token: string;
     token_type: string;
+    user_id: string | null;
 }
 
 export interface User {

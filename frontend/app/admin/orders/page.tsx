@@ -19,7 +19,7 @@ import {
     Printer
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
-import api from '@/lib/api';
+import { ordersApi, analyticsApi } from '@/lib/api';
 
 interface OrderItem {
     id: number;
@@ -103,15 +103,14 @@ export default function OrdersPage() {
 
     const fetchData = useCallback(async () => {
         try {
-            const [ordersRes, revenueRes] = await Promise.all([
-                api.get('/orders/?limit=500'),
-                api.get('/analytics/revenue')
+            const [allOrders, revenueData] = await Promise.all([
+                ordersApi.list({ limit: 500 }),
+                analyticsApi.revenue()
             ]);
 
-            const allOrders = ordersRes.data as Order[];
-            setTodayRevenue(revenueRes.data.total_revenue || 0);
+            setTodayRevenue(revenueData.total_revenue || 0);
 
-            const pendingCount = allOrders.filter(o => o.status === 'pending').length;
+            const pendingCount = allOrders.filter((o: Order) => o.status === 'pending').length;
             // Play sound if orders increased (and not first load)
             if (pendingCount > lastOrderCount && soundEnabled && lastOrderCount !== -1) {
                 const audio = new Audio('/sounds/notification.mp3');
@@ -145,7 +144,7 @@ export default function OrdersPage() {
 
     const handleStatusChange = async (orderId: number, newStatus: string) => {
         try {
-            await api.put(`/orders/${orderId}`, { status: newStatus });
+            await ordersApi.updateStatus(orderId, newStatus);
             console.log(`📦 Order #${orderId} status changed to: ${newStatus}`);
             setOrders(prev => prev.map(o =>
                 o.id === orderId ? { ...o, status: newStatus } : o
@@ -160,7 +159,7 @@ export default function OrdersPage() {
         if (!confirm('Xác nhận khách đã thanh toán và chuyển đơn sang xác nhận?')) return;
         setMarkingPaidId(orderId);
         try {
-            await api.put(`/orders/${orderId}`, { status: 'confirmed', payment_status: 'paid' });
+            await ordersApi.updateStatus(orderId, 'confirmed', { payment_status: 'paid' });
             setOrders(prev => prev.map(o =>
                 o.id === orderId ? { ...o, status: 'confirmed' } : o
             ));

@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, Trash2, ShoppingBag, User, Phone, Users } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, Users } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/Button';
-import { Textarea, Input } from '@/components/ui/Input'; // Assuming Input exists or Textarea usage
-import api from '@/lib/api';
+import { Textarea } from '@/components/ui/Input'; // Assuming Input exists or Textarea usage
+import { usersApi } from '@/lib/api';
 import { createTableSession, getTableIdFromUrl } from '@/lib/auth';
 
 interface CartDrawerProps {
@@ -44,7 +44,7 @@ export function CartDrawer({
     // Fetch user info when drawer opens
     useEffect(() => {
         if (isOpen) {
-            api.get('/users/me')
+            usersApi.getMe()
                 .then(res => {
                     setUserInfo(res.data);
                 })

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '@/lib/api';
+import { usersApi, analyticsApi } from '@/lib/api';
 import {
     RevenueData,
     ItemStat,
@@ -13,11 +13,11 @@ import { useDatePeriod } from '@/hooks/useDatePeriod';
 
 /**
  * useAnalyticsData Hook
- * 
+ *
  * Single Responsibility: Fetch analytics data from API.
  * Follows SRP by only handling analytics data fetching.
  * Follows DIP by depending on abstracted API calls.
- * 
+ *
  * @param period - The time period for analytics data
  * @returns Analytics data, loading state, and error state
  */
@@ -55,26 +55,26 @@ export function useAnalyticsData(period: PeriodType): AnalyticsDataResult {
         try {
             // Execute concurrent requests using the same period mapping
             // as `useDatePeriod` and the backend analytics service.
-            const [revenueRes, popularRes, peakRes, segmentsRes, retentionRes, usersRes] =
+            const [revenue, popular, peak, segments, retention, users] =
                 await Promise.all([
                     // Revenue uses explicit ISO timestamps
-                    api.get(`/analytics/revenue?start_date=${encodeURIComponent(startDateStr)}&end_date=${encodeURIComponent(endDateStr)}`),
+                    analyticsApi.revenue({ start_date: startDateStr, end_date: endDateStr }),
 
                     // Others use the numeric days parameter
-                    api.get(`/analytics/popular-items?days=${daysParam}&limit=10`),
-                    api.get(`/analytics/peak-hours?days=${daysParam}`),
-                    api.get('/analytics/customers'),
-                    api.get('/analytics/retention'),
-                    api.get('/users', { params: { limit: 100 } }).catch(() => ({ data: [] })),
+                    analyticsApi.popularItems({ days: daysParam, limit: 10 }),
+                    analyticsApi.peakHours({ days: daysParam }),
+                    analyticsApi.customers(),
+                    analyticsApi.retention(),
+                    usersApi.list({ limit: 100 }).catch(() => []),
                 ]);
 
             // Update states with fetched data
-            setRevenueStats(revenueRes.data);
-            setPopularItems(popularRes.data || []);
-            setPeakHours(peakRes.data || []);
-            setCustomerSegments(segmentsRes.data);
-            setRetention(retentionRes.data);
-            setCustomers(usersRes.data || []);
+            setRevenueStats(revenue);
+            setPopularItems(popular || []);
+            setPeakHours(peak || []);
+            setCustomerSegments(segments);
+            setRetention(retention);
+            setCustomers(users || []);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch data');
         } finally {
@@ -111,7 +111,7 @@ export function useRevenueData(period: PeriodType) {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const response = await api.get('/analytics/revenue');
+                const response = await analyticsApi.revenue();
                 setData(response.data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch revenue data');
@@ -136,8 +136,8 @@ export function usePopularItems(period: PeriodType, limit: number = 10) {
             setIsLoading(true);
             try {
                 const days = period === 'day' ? 1 : period === 'week' ? 7 : 30;
-                const response = await api.get(`/analytics/popular-items?days=${days}&limit=${limit}`);
-                setData(response.data);
+                const data = await analyticsApi.popularItems({ days, limit });
+                setData(data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch popular items');
             } finally {
@@ -161,7 +161,7 @@ export function usePeakHours(period: PeriodType) {
             setIsLoading(true);
             try {
                 const days = period === 'day' ? 1 : period === 'week' ? 7 : 30;
-                const response = await api.get(`/analytics/peak-hours?days=${days}`);
+                const response = await analyticsApi.peakHours({ days: days });
                 setData(response.data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch peak hours');
@@ -185,7 +185,7 @@ export function useCustomerSegments() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const response = await api.get('/analytics/customers');
+                const response = await analyticsApi.customers();
                 setData(response.data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch customer segments');
@@ -209,7 +209,7 @@ export function useRetentionData() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const response = await api.get('/analytics/retention');
+                const response = await analyticsApi.retention();
                 setData(response.data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch retention data');

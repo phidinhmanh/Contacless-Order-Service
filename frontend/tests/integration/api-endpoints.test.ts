@@ -10,10 +10,13 @@
  * Run specific category: TEST_CATEGORY=auth npm test -- api-endpoints.test.ts
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-
-const API_BASE_URL = process.env.TEST_API_URL || 'http://localhost:8000';
-const API_V1 = `${API_BASE_URL}/api/v1`;
+import axios from 'axios';
+import {
+    createTestApiClient,
+    setAdminToken,
+    clearTestToken,
+    getTestApiUrl,
+} from '../testUtils';
 
 // Filter by category if TEST_CATEGORY env var is set
 const TEST_CATEGORY = process.env.TEST_CATEGORY;
@@ -43,24 +46,24 @@ const ENDPOINTS: EndpointTest[] = [
     { method: 'GET', path: '/users', category: 'users', authRequired: true, description: 'List users' },
 
     // Foods endpoints
-    { method: 'GET', path: '/foods', category: 'foods', authRequired: false, description: 'List foods' },
-    { method: 'POST', path: '/foods', category: 'foods', authRequired: true, description: 'Create food' },
+    { method: 'GET', path: '/foods/', category: 'foods', authRequired: false, description: 'List foods' },
+    { method: 'POST', path: '/foods/', category: 'foods', authRequired: true, description: 'Create food' },
 
     // Categories endpoints
-    { method: 'GET', path: '/categories', category: 'categories', authRequired: false, description: 'List categories' },
-    { method: 'POST', path: '/categories', category: 'categories', authRequired: true, description: 'Create category' },
+    { method: 'GET', path: '/categories/', category: 'categories', authRequired: false, description: 'List categories' },
+    { method: 'POST', path: '/categories/', category: 'categories', authRequired: true, description: 'Create category' },
 
     // Menu endpoints
-    { method: 'GET', path: '/menu', category: 'menu', authRequired: false, description: 'Get menu' },
-    { method: 'GET', path: '/menu/categories', category: 'menu', authRequired: false, description: 'Get menu categories' },
+    { method: 'GET', path: '/menu/', category: 'menu', authRequired: false, description: 'Get menu' },
+    { method: 'GET', path: '/menu/categories/', category: 'menu', authRequired: false, description: 'Get menu categories' },
 
     // Orders endpoints
-    { method: 'GET', path: '/orders', category: 'orders', authRequired: true, description: 'List orders' },
-    { method: 'POST', path: '/orders', category: 'orders', authRequired: true, description: 'Create order' },
+    { method: 'GET', path: '/orders/', category: 'orders', authRequired: true, description: 'List orders' },
+    { method: 'POST', path: '/orders/', category: 'orders', authRequired: true, description: 'Create order' },
 
     // Tables endpoints
-    { method: 'GET', path: '/tables', category: 'tables', authRequired: true, description: 'List tables' },
-    { method: 'POST', path: '/tables', category: 'tables', authRequired: true, description: 'Create table' },
+    { method: 'GET', path: '/tables/', category: 'tables', authRequired: true, description: 'List tables' },
+    { method: 'POST', path: '/tables/', category: 'tables', authRequired: true, description: 'Create table' },
 
     // Payments endpoints
     { method: 'POST', path: '/payments/initiate', category: 'payments', authRequired: true, description: 'Initiate payment' },
@@ -85,17 +88,12 @@ const getTestEndpoints = (): EndpointTest[] => {
 };
 
 describe('API Endpoint Verification', () => {
-    let client: AxiosInstance;
     let authToken: string | null = null;
+    const API_BASE_URL = getTestApiUrl();
+    const api = createTestApiClient();
 
     beforeAll(async () => {
-        // Create axios client
-        client = axios.create({
-            baseURL: API_V1,
-            timeout: 5000,
-        });
-
-        // Check backend connectivity
+        // Check backend connectivity using axios (for health check only)
         try {
             const response = await axios.get(`${API_BASE_URL}/health`, { timeout: 10000 });
             if (response.status !== 200) {
@@ -111,14 +109,21 @@ describe('API Endpoint Verification', () => {
             params.append('username', '0386868686');
             params.append('password', 'AdminPassword123!');
 
-            const response = await client.post('/auth/login', params, {
+            const response = await api.post('/auth/login', params, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
             authToken = response.data.access_token;
+            if (authToken) {
+                setAdminToken(authToken);
+            }
         } catch (error: any) {
             console.warn('Could not get auth token. Some tests may fail:', error.message);
         }
+    });
+
+    afterAll(() => {
+        clearTestToken();
     });
 
     const testEndpoint = async (test: EndpointTest): Promise<{
@@ -127,10 +132,13 @@ describe('API Endpoint Verification', () => {
         message: string;
     }> => {
         const url = test.path;
-        const headers: Record<string, string> = {};
 
+        // Set token if required
         if (test.authRequired && authToken) {
-            headers['Authorization'] = `Bearer ${authToken}`;
+            clearTestToken();
+            setAdminToken(authToken);
+        } else {
+            clearTestToken();
         }
 
         try {
@@ -138,19 +146,19 @@ describe('API Endpoint Verification', () => {
 
             switch (test.method) {
                 case 'GET':
-                    response = await client.get(url, { headers, validateStatus: () => true });
+                    response = await api.get(url, { validateStatus: () => true });
                     break;
                 case 'POST':
-                    response = await client.post(url, {}, { headers, validateStatus: () => true });
+                    response = await api.post(url, {}, { validateStatus: () => true });
                     break;
                 case 'PUT':
-                    response = await client.put(url, {}, { headers, validateStatus: () => true });
+                    response = await api.put(url, {}, { validateStatus: () => true });
                     break;
                 case 'PATCH':
-                    response = await client.patch(url, {}, { headers, validateStatus: () => true });
+                    response = await api.patch(url, {}, { validateStatus: () => true });
                     break;
                 case 'DELETE':
-                    response = await client.delete(url, { headers, validateStatus: () => true });
+                    response = await api.delete(url, { validateStatus: () => true });
                     break;
             }
 

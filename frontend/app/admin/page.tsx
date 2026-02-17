@@ -20,7 +20,7 @@ import { RecentOrder } from '@/lib/types/analytics';
 
 /**
  * Admin Dashboard Page
- * 
+ *
  * Refactored to use SOLID principles:
  * - Single Responsibility: Component only handles UI rendering
  * - Data fetching delegated to useDashboardData hook

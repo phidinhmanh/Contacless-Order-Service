@@ -4,10 +4,10 @@ import { ExportOptions } from '@/lib/types/analytics';
 
 /**
  * useExportReport Hook
- * 
+ *
  * Single Responsibility: Handle export functionality.
  * Follows SRP by only handling export/download operations.
- * 
+ *
  * @returns Export function and loading state
  */
 interface ExportResult {
@@ -66,7 +66,7 @@ export function useAnalyticsExport() {
     const exportAnalytics = useCallback(async (startDate?: string, endDate?: string) => {
         const filename = `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`;
         const params: Record<string, unknown> = {};
-        
+
         if (startDate) params.start_date = startDate;
         if (endDate) params.end_date = endDate;
 

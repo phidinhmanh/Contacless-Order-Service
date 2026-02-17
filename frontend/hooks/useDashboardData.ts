@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '@/lib/api';
+import { ordersApi, analyticsApi, foodsApi, categoriesApi, tablesApi, paymentsApi, usersApi, authApi } from '@/lib/api';
 import { StatsData, RecentOrder, PeriodType } from '@/lib/types/analytics';
+import type { Order } from '@/lib/types';
 
 /**
  * useDashboardData Hook
- * 
+ *
  * Single Responsibility: Fetch dashboard-specific data with auto-refresh.
  * Follows SRP by only handling dashboard data fetching and refresh logic.
- * 
+ *
  * @param autoRefresh - Whether to auto-refresh data (default: true)
  * @param refreshInterval - Interval in milliseconds (default: 30000)
  * @returns Dashboard data, loading state, and control functions
@@ -38,28 +39,25 @@ export function useDashboardData(
         setError(null);
         try {
             // Use analytics endpoint for accurate stats
-            const [analyticsRes, ordersRes, tablesRes] = await Promise.all([
-                api.get('/analytics/revenue'),
-                api.get('/orders/?limit=50'),
-                api.get('/tables/'),
+            const [analytics, orders, tables] = await Promise.all([
+                analyticsApi.revenue(),
+                ordersApi.list({ limit: 50 }),
+                tablesApi.list(),
             ]);
 
-            const analytics = analyticsRes.data;
-            const orders = ordersRes.data as RecentOrder[];
-
             // Filter for pending orders
-            const pendingOrders = orders.filter(o =>
+            const pendingOrders = orders.filter((o: Order) =>
                 ['pending', 'confirmed', 'preparing'].includes(o.status)
             );
 
             // Count tables with active orders
-            const activeTables = (tablesRes.data as { status: string }[])
+            const activeTables = (tables as { status: string }[])
                 .filter(t => t.status === 'occupied').length;
 
             setStats({
                 todayRevenue: analytics.total_revenue || 0,
                 todayOrders: analytics.order_count || 0,
-                pendingOrders: pendingOrders.filter(o => o.status === 'pending').length,
+                pendingOrders: pendingOrders.filter((o: Order) => o.status === 'pending').length,
                 activeTables: activeTables,
             });
 
@@ -104,9 +102,9 @@ export function useDashboardStats() {
         const fetchData = async () => {
             try {
                 const [analyticsRes, ordersRes, tablesRes] = await Promise.all([
-                    api.get('/analytics/revenue'),
-                    api.get('/orders/?limit=50'),
-                    api.get('/tables/'),
+                    analyticsApi.revenue(),
+                    ordersApi.list({ limit: 50 }),
+                    tablesApi.list(),
                 ]);
 
                 const analytics = analyticsRes.data;
@@ -149,14 +147,13 @@ export function useRecentOrders(limit: number = 5) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await api.get(`/orders/?limit=50`);
-                const allOrders = response.data as RecentOrder[];
-                
+                const allOrders = await ordersApi.list({ limit: 50 }) as RecentOrder[];
+
                 // Filter for pending/active orders
                 const activeOrders = allOrders.filter(o =>
                     ['pending', 'confirmed', 'preparing'].includes(o.status)
                 );
-                
+
                 setOrders(activeOrders.slice(0, limit));
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch recent orders');
@@ -181,7 +178,7 @@ export function usePendingOrdersCount() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await api.get('/orders/?limit=100');
+                const response = await ordersApi.list({ limit: 100 });
                 const orders = response.data as RecentOrder[];
                 const pendingCount = orders.filter(o => o.status === 'pending').length;
                 setCount(pendingCount);

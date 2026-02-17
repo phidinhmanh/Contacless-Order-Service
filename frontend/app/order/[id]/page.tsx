@@ -8,15 +8,14 @@ import {
     X,
     Home,
     UtensilsCrossed,
-    Clock,
     CreditCard,
     ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { LoadingState } from '@/components/ui/Spinner';
-import api from '@/lib/api';
-import { formatPrice, cn } from '@/lib/utils';
+import { ordersApi } from '@/lib/api';
+import { formatPrice } from '@/lib/utils';
 import type { Order } from '@/lib/types';
 
 // Cancel window duration in seconds (120 seconds = 2 minutes)
@@ -37,12 +36,12 @@ export default function OrderConfirmationPage() {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const response = await api.get<Order>(`/orders/${orderId}`);
-                setOrder(response.data);
-                console.log(`📊 Order #${response.data.id} fetched. Current status: ${response.data.status}`);
+                const orderData = await ordersApi.getById(Number(orderId));
+                setOrder(orderData);
+                console.log(`📊 Order #${orderData.id} fetched. Current status: ${orderData.status}`);
 
                 // Check if cancel window has passed
-                const createdAt = new Date(response.data.created_at).getTime();
+                const createdAt = new Date(orderData.created_at).getTime();
                 const now = Date.now();
                 const elapsed = (now - createdAt) / 1000;
 
@@ -50,6 +49,7 @@ export default function OrderConfirmationPage() {
                     setCanCancel(false);
                 }
             } catch (err: any) {
+                console.error(err.messages)
                 setError('Không thể tải thông tin đơn hàng.');
             } finally {
                 setIsLoading(false);
@@ -70,9 +70,10 @@ export default function OrderConfirmationPage() {
 
         setIsCancelling(true);
         try {
-            await api.post(`/orders/${orderId}/cancel`);
+            await ordersApi.cancel(Number(orderId));
             router.push('/menu');
         } catch (err: any) {
+            console.error(err.messages)
             setError(err.message || 'Không thể hủy đơn hàng.');
         } finally {
             setIsCancelling(false);

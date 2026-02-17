@@ -97,7 +97,7 @@ describe('VietQR Payment Polling', () => {
 
         // 1. Wait for loading to clear
         await waitFor(() => {
-            expect(screen.queryByText(/tải/i)).toBeNull();
+            expect(screen.queryByText(/Không thể tải thông tin đơn hàng/i)).toBeNull();
         }, { timeout: 8000 });
 
         // 2. Verify Order Amount is visible

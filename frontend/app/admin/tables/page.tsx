@@ -16,7 +16,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
-import api from '@/lib/api';
+import { ordersApi, tablesApi, api } from '@/lib/api';
 
 interface Table {
     id: number;
@@ -56,11 +56,11 @@ export default function TablesPage() {
     const fetchTables = async () => {
         try {
             // Fetch tables from API
-            const tablesRes = await api.get('/tables/');
+            const tablesRes = await tablesApi.list();
             const tablesData = tablesRes.data as Table[];
 
             // Fetch orders for status
-            const ordersRes = await api.get('/orders/?limit=200');
+            const ordersRes = await ordersApi.list({ limit: 200 });
             const orders = ordersRes.data as (TableOrder & { table_id: number })[];
 
             // Merge data
@@ -94,7 +94,7 @@ export default function TablesPage() {
         setIsSaving(true);
         setError('');
         try {
-            await api.post('/tables/', formData);
+            await tablesApi.create(formData);
             setShowCreateModal(false);
             setFormData({ table_number: 1, capacity: 4 });
             fetchTables();
@@ -110,7 +110,7 @@ export default function TablesPage() {
         setIsSaving(true);
         setError('');
         try {
-            await api.put(`/tables/${editingTable.id}`, {
+            await tablesApi.update(editingTable.id, {
                 table_number: formData.table_number,
                 capacity: formData.capacity,
             });
@@ -118,7 +118,7 @@ export default function TablesPage() {
             setEditingTable(null);
             fetchTables();
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Không thể cập nhật bàn');
+            setError(err.message || 'Không thể cập nhật bàn');
         } finally {
             setIsSaving(false);
         }
@@ -127,20 +127,20 @@ export default function TablesPage() {
     const handleDelete = async (table: Table) => {
         if (!confirm(`Bạn có chắc muốn xóa Bàn ${table.table_number}?`)) return;
         try {
-            await api.delete(`/tables/${table.id}`);
+            await tablesApi.delete(table.id);
             fetchTables();
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Không thể xóa bàn');
+            alert(err.message || 'Không thể xóa bàn');
         }
     };
 
     const handleRegenerateQR = async (table: Table) => {
         try {
-            await api.post(`/tables/${table.id}/regenerate-qr`);
+            await tablesApi.regenerateQr(table.id);
             fetchTables();
             alert('Đã tạo lại mã QR thành công!');
         } catch (err: any) {
-            alert(err.response?.data?.detail || 'Không thể tạo lại mã QR');
+            alert(err.message || 'Không thể tạo lại mã QR');
         }
     };
 

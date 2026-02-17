@@ -36,7 +36,7 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
 ```python
 @router.delete("/orders/{order_id}")
 def cancel_order(
-    order_id: int, 
+    order_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER))
 ):

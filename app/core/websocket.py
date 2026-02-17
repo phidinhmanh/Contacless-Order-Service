@@ -3,6 +3,7 @@ WebSocket connection manager for real-time updates.
 Used by kitchen, dashboard, and other real-time features.
 """
 
+import asyncio
 from typing import Dict, Set
 
 from fastapi import WebSocket
@@ -18,13 +19,13 @@ class ConnectionManager:
         # channel_name -> set of WebSocket connections
         self.active_connections: Dict[str, Set[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, channel: str = "default"):
+    async def connect(self, websocket: WebSocket, channel: str = 'default'):
         """Register a WebSocket connection."""
         if channel not in self.active_connections:
             self.active_connections[channel] = set()
         self.active_connections[channel].add(websocket)
 
-    def disconnect(self, websocket: WebSocket, channel: str = "default"):
+    def disconnect(self, websocket: WebSocket, channel: str = 'default'):
         """Remove a WebSocket connection."""
         if channel in self.active_connections:
             self.active_connections[channel].discard(websocket)
@@ -33,7 +34,7 @@ class ConnectionManager:
         """Send message to a specific connection."""
         await websocket.send_json(message)
 
-    async def broadcast(self, message: dict, channel: str = "default"):
+    async def broadcast(self, message: dict, channel: str = 'default'):
         """Broadcast message to all connections in a channel."""
         if channel not in self.active_connections:
             return
@@ -43,6 +44,8 @@ class ConnectionManager:
             try:
                 await connection.send_json(message)
             except Exception:
+                disconnected.add(connection)
+            except asyncio.CancelledError:
                 disconnected.add(connection)
 
         # Clean up disconnected clients

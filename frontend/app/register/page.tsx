@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UtensilsCrossed, Phone, Lock, User, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
-import api from '@/lib/api';
+import { authApi } from '@/lib/api';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -44,10 +44,9 @@ export default function RegisterPage() {
         setIsLoading(true);
 
         try {
-            await api.post('/auth/register', {
+            await authApi.register({
                 phone_number: formData.phone_number,
                 full_name: formData.full_name,
-                gender: formData.gender,
                 password: formData.password,
             });
 

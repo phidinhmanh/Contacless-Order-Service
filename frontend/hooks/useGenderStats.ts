@@ -3,10 +3,10 @@ import { CustomerData, GenderStat } from '@/lib/types/analytics';
 
 /**
  * useGenderStats Hook
- * 
+ *
  * Single Responsibility: Process customer data to gender distribution statistics.
  * Follows SRP by only handling gender data calculation and transformation.
- * 
+ *
  * @param customers - Array of customer data
  * @returns Array of gender statistics with percentages and labels
  */
@@ -35,9 +35,9 @@ export function useGenderStats(customers: CustomerData[]): GenderStat[] {
             count: count as number,
             percent: total > 0 ? ((count as number) / total) * 100 : 0,
             label: gender === 'male' ? 'Nam' : gender === 'female' ? 'Nữ' : 'Khác',
-            color: gender === 'male' 
+            color: gender === 'male'
                 ? '#3b82f6'  // blue-500
-                : gender === 'female' 
+                : gender === 'female'
                     ? '#ec4899'  // pink-500
                     : '#6b7280'  // gray-500
         }));

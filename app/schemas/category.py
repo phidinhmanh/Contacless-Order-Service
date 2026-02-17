@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class CategoryBase(BaseModel):
     """Base category schema with common fields."""
+
     name: str = Field(..., max_length=50)
     description: str | None = None
     display_order: int = 0
@@ -13,11 +14,13 @@ class CategoryBase(BaseModel):
 
 class CategoryCreate(CategoryBase):
     """Schema for creating a new category."""
+
     pass
 
 
 class CategoryUpdate(BaseModel):
     """Schema for updating a category. All fields optional."""
+
     name: str | None = None
     description: str | None = None
     display_order: int | None = None
@@ -26,6 +29,7 @@ class CategoryUpdate(BaseModel):
 
 class CategoryResponse(CategoryBase):
     """Schema for category response."""
+
     id: int
     created_at: datetime | None = None
 

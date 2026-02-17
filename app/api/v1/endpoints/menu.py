@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.crud import crud_food
-from app.schemas.food import FoodResponse
 from app.schemas.category import CategoryResponse
+from app.schemas.food import FoodResponse
 
 router = APIRouter()
 
 
-@router.get("", response_model=list[FoodResponse])
+@router.get('', response_model=list[FoodResponse])
 def get_menu(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
@@ -28,11 +28,11 @@ def get_menu(
         skip=skip,
         limit=limit,
         category_id=category_id,
-        include_unavailable=include_unavailable
+        include_unavailable=include_unavailable,
     )
 
 
-@router.get("/categories", response_model=list[CategoryResponse])
+@router.get('/categories', response_model=list[CategoryResponse])
 def get_categories(db: Annotated[Session, Depends(get_db)]):
     """Get all active food categories for UI tabs."""
     return crud_food.get_categories(db)

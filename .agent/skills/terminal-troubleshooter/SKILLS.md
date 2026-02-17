@@ -11,7 +11,7 @@ You are currently stuck in a "Loop of Stupid" because you are not seeing the ful
 
 When a command fails (Exit Code != 0), you **MUST NOT** guess the fix. Follow these exact steps:
 
-1. **Capture the Full Log**: Run the failing command again, but pipe the output to a temporary file. 
+1. **Capture the Full Log**: Run the failing command again, but pipe the output to a temporary file.
    - Example: `pytest > debug_log.txt 2>&1` or `npm test > debug_log.txt 2>&1`
 2. **Read the Log**: Use your `read_file` tool to ingest `debug_log.txt`.
 3. **Analyze the Traceback**: Look for specific line numbers, `ImportError`, `AttributeError`, or `ConnectionError`.

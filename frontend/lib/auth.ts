@@ -1,4 +1,4 @@
-import api from './api';
+import { authApi, tablesApi, usersApi } from './api';
 import type { GuestAuthResponse } from './types';
 
 const TOKEN_KEY = 'access_token';
@@ -40,41 +40,30 @@ export function getUserIdFromToken(): string | null {
 
 // Check if user is authenticated
 export function isAuthenticated(): boolean {
-    return !!getToken();
+    return !!getToken() && localStorage.getItem('guest_id') !== null;
 }
 
 // Guest authentication
 export async function guestAuth(tableId: string): Promise<GuestAuthResponse> {
-    const response = await api.post<GuestAuthResponse>('/auth/guest', {
-        table_id: parseInt(tableId, 10) || null,
-    }, {
-        withCredentials: true, // Important: allows cookies to be set/sent
-    });
+    const response = await authApi.guestAuth(tableId);
 
-    const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token, user_id } = response;
     setToken(access_token);
+    localStorage.setItem('guest_id', user_id || ''.toString());
 
     // Store refresh token for token refresh functionality
     if (typeof window !== 'undefined' && refresh_token) {
         localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
     }
 
-    return response.data;
+    return response;
 }
 
 // Phone login
 export async function phoneLogin(phone: string, password: string): Promise<void> {
-    const formData = new FormData();
-    formData.append('username', phone);
-    formData.append('password', password);
+    const response = await authApi.phoneLogin(phone, password);
 
-    const response = await api.post('/auth/login', formData, {
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-    });
-
-    const { access_token, refresh_token } = response.data;
+    const { access_token, refresh_token } = response;
     setToken(access_token);
 
     if (typeof window !== 'undefined' && refresh_token) {
@@ -86,7 +75,7 @@ export async function phoneLogin(phone: string, password: string): Promise<void>
 export function logout(): void {
     removeToken();
     // Also call backend to clear cookies
-    api.post('/auth/logout', null, { withCredentials: true }).catch(() => { });
+    authApi.logout().catch(() => { });
     if (typeof window !== 'undefined') {
         window.location.href = '/';
     }
@@ -111,13 +100,7 @@ export async function updateGuestDemographics(
     }
 
     try {
-        await api.post('/auth/guest/demographics', null, {
-            params: {
-                guest_id: userId,
-                gender,
-                age_group,
-            }
-        });
+        await authApi.updateGuestDemographics(userId, gender, age_group);
         console.log('✅ Guest demographics saved to server');
     } catch (err) {
         console.error('Failed to save guest demographics:', err);
@@ -131,11 +114,10 @@ export async function createTableSession(
     leadUserId?: number
 ): Promise<any> {
     try {
-        const response = await api.post(`/tables/${tableId}/session`, {
+        return await tablesApi.createSession(tableId, {
             guest_count: guestCount,
             lead_user_id: leadUserId,
         });
-        return response.data;
     } catch (err) {
         console.error('Failed to create/join table session:', err);
         throw err;
@@ -147,10 +129,5 @@ export async function updateLeadGuestInfo(
     fullName: string,
     phoneNumber: string
 ): Promise<void> {
-    await api.patch('/users/me/lead-info', null, {
-        params: {
-            full_name: fullName,
-            phone_number: phoneNumber,
-        }
-    });
+    await usersApi.updateLeadInfo(fullName, phoneNumber);
 }

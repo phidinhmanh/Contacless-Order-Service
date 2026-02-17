@@ -7,7 +7,7 @@ import { ArrowLeft, CreditCard, X, CheckCircle, Loader2 } from 'lucide-react';
 import { PaymentButton } from '@/components/PaymentButton';
 import { CountdownProgress } from '@/components/CountdownTimer';
 import { LoadingState } from '@/components/ui/Spinner';
-import api from '@/lib/api';
+import { ordersApi, paymentsApi } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 import type { Order, PaymentProvider, VietQRPayment } from '@/lib/types';
 
@@ -38,8 +38,8 @@ function PaymentSelectionContent() {
 
         const fetchOrder = async () => {
             try {
-                const response = await api.get<Order>(`/orders/${orderId}`);
-                setOrder(response.data);
+                const orderData = await ordersApi.getById(Number(orderId));
+                setOrder(orderData);
             } catch (err: any) {
                 setError('Không thể tải thông tin đơn hàng.');
             } finally {
@@ -56,8 +56,8 @@ function PaymentSelectionContent() {
 
         const pollPaymentStatus = async () => {
             try {
-                const response = await api.get(`/payments/${vietqrPayment.id}`);
-                if (response.data.status === 'completed') {
+                const paymentStatus = await paymentsApi.getStatus(vietqrPayment.id);
+                if (paymentStatus.status === 'completed') {
                     setPaymentConfirmed(true);
                     setTimeout(() => {
                         router.push(`/payment/status/${vietqrPayment.id}?order_id=${orderId}&status=success`);
@@ -83,17 +83,17 @@ function PaymentSelectionContent() {
         try {
             if (provider === 'cash') {
                 // [FIX] Gọi API báo thanh toán tiền mặt để Kitchen nhận đơn ngay
-                await api.post(`/orders/${orderId}/pay-cash`);
+                await ordersApi.payCash(Number(orderId));
                 router.push(`/payment/status?order_id=${orderId}&provider=cash&status=success`);
                 return;
             }
 
-            const response = await api.post('/payments/initiate', {
-                order_id: parseInt(orderId),
-                provider: provider,
+            const paymentData = await paymentsApi.initiate({
+                order_id: Number(orderId),
+                payment_method: provider,
                 amount: order.total_amount,
             });
-            setVietqrPayment(response.data);
+            setVietqrPayment(paymentData);
             setShowQRModal(true);
             setIsProcessing(false);
         } catch (err: any) {

@@ -41,6 +41,7 @@ function PaymentStatusContent() {
             }
         } catch (err: any) {
             console.error('Failed to check payment status:', err);
+            setError(err.message);
         }
     }, [transactionId, isCashPayment]);
 

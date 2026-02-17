@@ -24,7 +24,7 @@ frontend/test_results/
 venv/
 ENV/
 env/
-
+.agent/
 # IDE
 .vscode/
 .idea/

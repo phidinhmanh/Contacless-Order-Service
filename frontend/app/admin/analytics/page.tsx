@@ -22,21 +22,21 @@ import { useGenderStats } from '@/hooks/useGenderStats';
 import { useAnalyticsExport } from '@/hooks/useExportReport';
 
 // Types
-import { PeriodType, PeakHour } from '@/lib/types/analytics';
+import { PeriodType } from '@/lib/types/analytics';
 
 export default function AnalyticsPage() {
     const [period, setPeriod] = useState<PeriodType>('week');
-    
+
     // Use hooks - each has Single Responsibility
-    const { startDateStr, endDateStr, daysParam } = useDatePeriod(period);
-    const { 
-        revenueStats, 
-        popularItems, 
-        peakHours, 
-        customerSegments, 
-        retention, 
+    const { startDateStr, endDateStr } = useDatePeriod(period);
+    const {
+        revenueStats,
+        popularItems,
+        peakHours,
+        customerSegments,
+        retention,
         customers,
-        isLoading 
+        isLoading
     } = useAnalyticsData(period);
     const genderData = useGenderStats(customers);
     const { exportAnalytics, isExporting } = useAnalyticsExport();
@@ -156,17 +156,17 @@ export default function AnalyticsPage() {
                             <EmptyState message="Chưa có dữ liệu retention" />
                         ) : (
                             <div className="space-y-4">
-                                <RetentionBar 
-                                    label="14 ngày" 
-                                    rate={retention?.rate_14d || 0} 
-                                    users={retention?.returning_users_14d || 0} 
-                                    color="from-purple-500 to-pink-500" 
+                                <RetentionBar
+                                    label="14 ngày"
+                                    rate={retention?.rate_14d || 0}
+                                    users={retention?.returning_users_14d || 0}
+                                    color="from-purple-500 to-pink-500"
                                 />
-                                <RetentionBar 
-                                    label="30 ngày" 
-                                    rate={retention?.rate_30d || 0} 
-                                    users={retention?.returning_users_30d || 0} 
-                                    color="from-blue-500 to-cyan-500" 
+                                <RetentionBar
+                                    label="30 ngày"
+                                    rate={retention?.rate_30d || 0}
+                                    users={retention?.returning_users_30d || 0}
+                                    color="from-blue-500 to-cyan-500"
                                 />
                             </div>
                         )}
