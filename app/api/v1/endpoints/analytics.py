@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from io import BytesIO
 from typing import Annotated
 
+import pytz  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -18,28 +19,72 @@ from app.services.analytics_service import AnalyticsService
 router = APIRouter()
 
 
-@router.get("/revenue")
+def parse_vietnam_datetime(value: str | None) -> datetime | None:
+    """Parse datetime string with Vietnam timezone (+07:00 or  07:00) to UTC datetime."""
+    if not value:
+        return None
+
+    try:
+        # Handle ISO format with +07:00 or space+07:00 timezone (URL decoding issue)
+        # Normalize the timezone separator
+        value = value.replace(' ', '+')
+
+        if '+07:00' in value:
+            dt_str = value.replace('+07:00', '')
+            # Parse the datetime part
+            dt = datetime.fromisoformat(dt_str)
+            # Create timezone-aware datetime for Vietnam
+            vn_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+            dt = vn_tz.localize(dt)
+            # Convert to UTC
+            return dt.astimezone(UTC)
+        elif '-07:00' in value:
+            dt_str = value.replace('-07:00', '')
+            dt = datetime.fromisoformat(dt_str)
+            vn_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+            dt = vn_tz.localize(dt)
+            return dt.astimezone(UTC)
+        else:
+            # Parse as-is and assume UTC
+            dt = datetime.fromisoformat(value)
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=UTC)
+            return dt.astimezone(UTC)
+    except (ValueError, AttributeError) as e:
+        print(f"Error parsing datetime '{value}': {e}")
+        return None
+
+
+@router.get('/revenue')
 def get_revenue_summary(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
-    start_date: datetime | None = Query(None, description="Start date for report"),
-    end_date: datetime | None = Query(None, description="End date for report"),
+    start_date: str | None = Query(
+        None, description='Start date for report (ISO format with timezone)'
+    ),
+    end_date: str | None = Query(
+        None, description='End date for report (ISO format with timezone)'
+    ),
 ):
     """
     Get revenue summary for a date range.
     Defaults to last 24 hours. Requires ADMIN or MANAGER role.
-    
-    Updates every 5 minutes (via frontend polling or caching).
+
+    Dates should be in Vietnam timezone (ICT, UTC+7) with format: YYYY-MM-DDTHH:MM:SS+07:00
     """
+    # Parse timezone-aware datetime strings to UTC
+    start_dt = parse_vietnam_datetime(start_date)
+    end_dt = parse_vietnam_datetime(end_date)
+
     analytics = AnalyticsService(db)
-    return analytics.get_revenue_summary(start_date, end_date)
+    return analytics.get_revenue_summary(start_dt, end_dt)
 
 
-@router.get("/peak-hours")
+@router.get('/peak-hours')
 def get_peak_hours(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
-    days: int = Query(7, ge=1, le=90, description="Number of days to analyze"),
+    days: int = Query(7, ge=1, le=90, description='Number of days to analyze'),
 ):
     """
     Get peak hour analysis with 30-minute intervals.
@@ -49,7 +94,7 @@ def get_peak_hours(
     return analytics.get_peak_hours(days=days)
 
 
-@router.get("/customers")
+@router.get('/customers')
 def get_customer_segments(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
@@ -62,7 +107,7 @@ def get_customer_segments(
     return analytics.get_customer_segments()
 
 
-@router.get("/retention")
+@router.get('/retention')
 def get_retention_rate(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
@@ -75,11 +120,13 @@ def get_retention_rate(
     return analytics.get_retention_data()
 
 
-@router.get("/inventory-alerts")
+@router.get('/inventory-alerts')
 def get_inventory_alerts(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF)),
-    hours: int = Query(24, ge=1, le=168, description="Threshold hours of stock remaining"),
+    hours: int = Query(
+        24, ge=1, le=168, description='Threshold hours of stock remaining'
+    ),
 ):
     """
     Get predictive alerts for items that are running low based on current order speed.
@@ -88,22 +135,22 @@ def get_inventory_alerts(
     return analytics.get_inventory_alerts(threshold_hours=hours)
 
 
-@router.get("/daily-revenue")
+@router.get('/daily-revenue')
 def get_daily_revenue(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
-    days: int = Query(30, ge=1, le=365, description="Number of days to include"),
+    days: int = Query(30, ge=1, le=365, description='Number of days to include'),
 ):
     """Get daily revenue for charting. Requires ADMIN or MANAGER role."""
     analytics = AnalyticsService(db)
     return analytics.get_daily_revenue(days=days)
 
 
-@router.get("/tables")
+@router.get('/tables')
 def get_table_revenue(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
-    days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
+    days: int = Query(30, ge=1, le=365, description='Number of days to analyze'),
 ):
     """
     Analyze revenue and popularity by table.
@@ -114,12 +161,12 @@ def get_table_revenue(
     return analytics.get_table_revenue(days=days)
 
 
-@router.get("/popular-items")
+@router.get('/popular-items')
 def get_popular_items(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
-    days: int = Query(30, ge=1, le=365, description="Number of days to analyze"),
-    limit: int = Query(10, ge=1, le=100, description="Number of items to return"),
+    days: int = Query(30, ge=1, le=365, description='Number of days to analyze'),
+    limit: int = Query(10, ge=1, le=100, description='Number of items to return'),
 ):
     """
     Get top selling items.
@@ -129,7 +176,7 @@ def get_popular_items(
     return analytics.get_popular_items(days=days, limit=limit)
 
 
-@router.get("/export")
+@router.get('/export')
 def export_to_excel(
     db: Annotated[Session, Depends(get_db)],
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.MANAGER)),
@@ -147,63 +194,83 @@ def export_to_excel(
     # Create workbook
     wb = Workbook()
 
-    # Revenue Summary sheet
+    # Revenue Summary sheet (wb.active can be None for empty workbook)
     ws_revenue = wb.active
-    ws_revenue.title = "Revenue Summary"
+    if ws_revenue is None:
+        ws_revenue = wb.create_sheet('Revenue Summary')
+    else:
+        ws_revenue.title = 'Revenue Summary'
     revenue = analytics.get_revenue_summary(start_date, end_date)
-    ws_revenue.append(["Metric", "Value"])
-    ws_revenue.append(["Total Revenue", revenue["total_revenue"]])
-    ws_revenue.append(["Order Count", revenue["order_count"]])
-    ws_revenue.append(["Average Order Value", revenue["average_order_value"]])
-    ws_revenue.append(["Period Start", revenue["period"]["start"]])
-    ws_revenue.append(["Period End", revenue["period"]["end"]])
+    ws_revenue.append(['Metric', 'Value'])
+    ws_revenue.append(['Total Revenue', revenue['total_revenue']])
+    ws_revenue.append(['Order Count', revenue['order_count']])
+    ws_revenue.append(['Average Order Value', revenue['average_order_value']])
+    ws_revenue.append(['Period Start', revenue['period']['start']])
+    ws_revenue.append(['Period End', revenue['period']['end']])
 
     # Daily Revenue sheet
-    ws_daily = wb.create_sheet("Daily Revenue")
-    ws_daily.append(["Date", "Revenue (VND)"])
+    ws_daily = wb.create_sheet('Daily Revenue')
+    ws_daily.append(['Date', 'Revenue (VND)'])
     for row in analytics.get_daily_revenue(30):
-        ws_daily.append([row["date"], row["revenue"]])
+        ws_daily.append([row['date'], row['revenue']])
 
     # Peak Hours sheet
-    ws_peak = wb.create_sheet("Peak Hours")
-    ws_peak.append(["Time Slot", "Order Count"])
+    ws_peak = wb.create_sheet('Peak Hours')
+    ws_peak.append(['Time Slot', 'Order Count'])
     for row in analytics.get_peak_hours(7):
-        ws_peak.append([row["time_slot"], row["order_count"]])
+        ws_peak.append([row['time_slot'], row['order_count']])
 
     # Table Profitability sheet
-    ws_tables = wb.create_sheet("Table Profitability")
-    ws_tables.append(["Table ID", "Total Revenue (VND)", "Order Count", "Avg Order Value"])
+    ws_tables = wb.create_sheet('Table Profitability')
+    ws_tables.append(
+        ['Table ID', 'Total Revenue (VND)', 'Order Count', 'Avg Order Value']
+    )
     for row in analytics.get_table_revenue(30):
-        ws_tables.append([row["table_id"], row["total_revenue"], row["order_count"], row["avg_order_value"]])
+        ws_tables.append(
+            [
+                row['table_id'],
+                row['total_revenue'],
+                row['order_count'],
+                row['avg_order_value'],
+            ]
+        )
 
     # Customer Segments sheet
-    ws_customers = wb.create_sheet("Customer Retention")
+    ws_customers = wb.create_sheet('Customer Retention')
     retention = analytics.get_retention_data()
-    ws_customers.append(["Window", "Retention Rate (%)", "Returning Users"])
-    ws_customers.append(["14 Days", retention["rate_14d"], retention["returning_users_14d"]])
-    ws_customers.append(["30 Days", retention["rate_30d"], retention["returning_users_30d"]])
+    ws_customers.append(['Window', 'Retention Rate (%)', 'Returning Users'])
+    ws_customers.append(
+        ['14 Days', retention['rate_14d'], retention['returning_users_14d']]
+    )
+    ws_customers.append(
+        ['30 Days', retention['rate_30d'], retention['returning_users_30d']]
+    )
 
     # Inventory Alerts sheet
-    ws_inventory = wb.create_sheet("Inventory Alerts")
-    ws_inventory.append(["Item", "Current Stock", "Velocity (unit/hr)", "Est. Hours Left", "Priority"])
+    ws_inventory = wb.create_sheet('Inventory Alerts')
+    ws_inventory.append(
+        ['Item', 'Current Stock', 'Velocity (unit/hr)', 'Est. Hours Left', 'Priority']
+    )
     for alert in analytics.get_inventory_alerts(threshold_hours=72):
-         ws_inventory.append([
-             alert["food_name"],
-             alert["current_stock"],
-             alert["velocity_per_hour"],
-             alert["estimated_hours_remaining"],
-             alert["priority"]
-         ])
+        ws_inventory.append(
+            [
+                alert['food_name'],
+                alert['current_stock'],
+                alert['velocity_per_hour'],
+                alert['estimated_hours_remaining'],
+                alert['priority'],
+            ]
+        )
 
     # Save to BytesIO
     output = BytesIO()
     wb.save(output)
     output.seek(0)
 
-    filename = f"analytics_report_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f'analytics_report_{datetime.now(UTC).strftime("%Y%m%d_%H%M%S")}.xlsx'
 
     return StreamingResponse(
         output,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename={filename}'},
     )

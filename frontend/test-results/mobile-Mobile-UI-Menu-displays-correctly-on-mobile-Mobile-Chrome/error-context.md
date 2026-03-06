@@ -1,0 +1,124 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - heading "Thực đơn" [level=1] [ref=e7]
+            - generic [ref=e8]: Bàn 1
+            - button "Theo dõi đơn" [ref=e9] [cursor=pointer]:
+              - img [ref=e10]
+              - text: Theo dõi đơn
+          - generic [ref=e15]:
+            - img [ref=e17]
+            - textbox "Tìm món ăn..." [ref=e20]
+        - generic [ref=e22]:
+          - button "Tất cả" [ref=e23] [cursor=pointer]
+          - button "Appetizer" [ref=e24] [cursor=pointer]
+          - button "Dessert" [ref=e25] [cursor=pointer]
+          - button "Drinks" [ref=e26] [cursor=pointer]
+          - button "Main" [ref=e27] [cursor=pointer]
+          - button "Sandwich" [ref=e28] [cursor=pointer]
+          - button "Seafood" [ref=e29] [cursor=pointer]
+          - button "Soup" [ref=e30] [cursor=pointer]
+      - main [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e34]:
+            - img "Phở Bò" [ref=e36]
+            - generic [ref=e37]:
+              - heading "Phở Bò" [level=3] [ref=e38]
+              - paragraph [ref=e39]: Traditional Vietnamese beef noodle soup with rice noodles, tender beef slices, and aromatic broth.
+              - generic [ref=e40]:
+                - generic [ref=e41]: 55.000 ₫
+                - button "Thêm vào giỏ" [ref=e42] [cursor=pointer]:
+                  - img [ref=e43]
+          - generic [ref=e45]:
+            - img "Bánh Mì" [ref=e47]
+            - generic [ref=e48]:
+              - heading "Bánh Mì" [level=3] [ref=e49]
+              - paragraph [ref=e50]: Crispy baguette with pate, pickled vegetables, cilantro, and grilled pork.
+              - generic [ref=e51]:
+                - generic [ref=e52]: 25.000 ₫
+                - button "Thêm vào giỏ" [ref=e53] [cursor=pointer]:
+                  - img [ref=e54]
+          - generic [ref=e56]:
+            - img "Bún Chả" [ref=e58]
+            - generic [ref=e59]:
+              - heading "Bún Chả" [level=3] [ref=e60]
+              - paragraph [ref=e61]: Hanoi-style grilled pork with vermicelli noodles, fresh herbs, and dipping sauce.
+              - generic [ref=e62]:
+                - generic [ref=e63]: 60.000 ₫
+                - button "Thêm vào giỏ" [ref=e64] [cursor=pointer]:
+                  - img [ref=e65]
+          - generic [ref=e67]:
+            - img "Cơm Tấm" [ref=e69]
+            - generic [ref=e70]:
+              - heading "Cơm Tấm" [level=3] [ref=e71]
+              - paragraph [ref=e72]: Broken rice with grilled pork chop, fried egg, and fish sauce.
+              - generic [ref=e73]:
+                - generic [ref=e74]: 50.000 ₫
+                - button "Thêm vào giỏ" [ref=e75] [cursor=pointer]:
+                  - img [ref=e76]
+          - generic [ref=e78]:
+            - img "Gỏi Cuốn" [ref=e80]
+            - generic [ref=e81]:
+              - heading "Gỏi Cuốn" [level=3] [ref=e82]
+              - paragraph [ref=e83]: Fresh spring rolls with shrimp, pork, rice noodles, and peanut dipping sauce.
+              - generic [ref=e84]:
+                - generic [ref=e85]: 35.000 ₫
+                - button "Thêm vào giỏ" [ref=e86] [cursor=pointer]:
+                  - img [ref=e87]
+          - generic [ref=e89]:
+            - img "Cà Phê Sữa Đá" [ref=e91]
+            - generic [ref=e92]:
+              - heading "Cà Phê Sữa Đá" [level=3] [ref=e93]
+              - paragraph [ref=e94]: Vietnamese iced coffee with sweetened condensed milk.
+              - generic [ref=e95]:
+                - generic [ref=e96]: 29.000 ₫
+                - button "Thêm vào giỏ" [ref=e97] [cursor=pointer]:
+                  - img [ref=e98]
+          - generic [ref=e100]:
+            - img "Ốc Hương Xào Bơ Tỏi" [ref=e102]
+            - generic [ref=e103]:
+              - heading "Ốc Hương Xào Bơ Tỏi" [level=3] [ref=e104]
+              - paragraph [ref=e105]: Sweet snails stir-fried with garlic butter and lemongrass.
+              - generic [ref=e106]:
+                - generic [ref=e107]: 120.000 ₫
+                - button "Thêm vào giỏ" [ref=e108] [cursor=pointer]:
+                  - img [ref=e109]
+          - generic [ref=e111]:
+            - img "Nem Nướng" [ref=e113]
+            - generic [ref=e114]:
+              - heading "Nem Nướng" [level=3] [ref=e115]
+              - paragraph [ref=e116]: Grilled pork sausage served with rice paper, herbs, and dipping sauce.
+              - generic [ref=e117]:
+                - generic [ref=e118]: 45.000 ₫
+                - button "Thêm vào giỏ" [ref=e119] [cursor=pointer]:
+                  - img [ref=e120]
+          - generic [ref=e122]:
+            - img "Trà Đá" [ref=e124]
+            - generic [ref=e125]:
+              - heading "Trà Đá" [level=3] [ref=e126]
+              - paragraph [ref=e127]: Iced Vietnamese green tea - free refills!
+              - generic [ref=e128]:
+                - generic [ref=e129]: 5.000 ₫
+                - button "Thêm vào giỏ" [ref=e130] [cursor=pointer]:
+                  - img [ref=e131]
+          - generic [ref=e133]:
+            - img "Chè Ba Màu" [ref=e135]
+            - generic [ref=e136]:
+              - heading "Chè Ba Màu" [level=3] [ref=e137]
+              - paragraph [ref=e138]: Three-color dessert with mung beans, red beans, and jelly in coconut milk.
+              - generic [ref=e139]:
+                - generic [ref=e140]: 25.000 ₫
+                - button "Thêm vào giỏ" [ref=e141] [cursor=pointer]:
+                  - img [ref=e142]
+  - button [ref=e143] [cursor=pointer]:
+    - img [ref=e144]
+  - button "Open Next.js Dev Tools" [ref=e151] [cursor=pointer]:
+    - img [ref=e152]
+  - alert [ref=e155]
+```

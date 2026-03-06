@@ -1,20 +1,33 @@
 /** @jest-environment node */
-import axios from 'axios';
+import {
+    createTestApiClient,
+    getTestApiUrl,
+} from '../testUtils';
 
-jest.mock('axios');
+// Mock the entire testUtils module
+jest.mock('../testUtils', () => ({
+    createTestApiClient: jest.fn(),
+    getTestApiUrl: jest.fn(() => 'http://localhost:8000'),
+}));
 
 describe('Load Testing: 20 Concurrent Users', () => {
     test('System handles 20 simultaneous orders', async () => {
         const REQUEST_COUNT = 20;
-        const URL = 'http://localhost:8000/api/v1/foods';
 
-        (axios.get as jest.Mock).mockResolvedValue({
+        // Mock the API client
+        const mockGet = jest.fn().mockResolvedValue({
             status: 200,
             data: []
         });
 
+        (createTestApiClient as jest.Mock).mockReturnValue({
+            get: mockGet,
+        });
+
+        const api = createTestApiClient();
+
         const requests = Array.from({ length: REQUEST_COUNT }).map((_, i) =>
-            axios.get(URL).then(res => ({ status: res.status, time: Date.now() }))
+            api.get('/foods/').then(() => ({ status: 200, time: Date.now() }))
         );
 
         const startTime = Date.now();

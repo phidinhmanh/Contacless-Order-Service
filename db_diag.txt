@@ -1,4 +1,0 @@
-Orders: 32
-Statuses: [('completed', 16), ('cancelled', 14), ('ready', 2)]
-Sessions: 0
-Sessions with user: 0

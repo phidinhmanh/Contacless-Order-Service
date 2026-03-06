@@ -10,11 +10,11 @@ import { CartDrawer } from '@/components/CartDrawer';
 import { CountBadge } from '@/components/ui/Badge';
 import { LoadingState } from '@/components/ui/Spinner';
 import { Input } from '@/components/ui/Input';
+import { OutOfStockPopup } from '@/components/OutOfStockPopup';
 
 import { useCartStore } from '@/store/cartStore';
 import { useMenuStore } from '@/store/menuStore';
-import api from '@/lib/api';
-import type { CreateOrderRequest } from '@/lib/types';
+import { ordersApi} from '@/lib/api';
 
 export default function MenuPage() {
     const router = useRouter();
@@ -28,6 +28,7 @@ export default function MenuPage() {
         foods,
         isLoading,
         error: menuError,
+        lastFetched,
         fetchMenu
     } = useMenuStore();
 
@@ -36,15 +37,28 @@ export default function MenuPage() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isOrdering, setIsOrdering] = useState(false);
     const [error, setError] = useState('');
+    const [outOfStockFood, setOutOfStockFood] = useState<string | null>(null);
+    const [isOutOfStockPopupOpen, setIsOutOfStockPopupOpen] = useState(false);
 
     // Fetch menu on mount (uses cache if valid)
     useEffect(() => {
-        fetchMenu();
+        console.log('🔄 MenuPage: Fetching menu...', {
+            cachedCategories: categories.length,
+            cachedFoods: foods.length,
+            lastFetched: lastFetched,
+            isLoading,
+        });
+        fetchMenu().catch((err) => {
+            console.error('❌ MenuPage: fetchMenu failed:', err);
+        });
     }, [fetchMenu]);
 
     // Sync menu error to local error state
     useEffect(() => {
-        if (menuError) setError(menuError);
+        if (menuError) {
+            console.warn('⚠️ MenuPage: menuError detected:', menuError);
+            setError(menuError);
+        }
     }, [menuError]);
 
     useEffect(() => {
@@ -82,23 +96,41 @@ export default function MenuPage() {
 
         setIsOrdering(true);
         try {
-            const orderRequest: CreateOrderRequest = {
-                table_id: tableId,
+            const orderRequest = {
+                table_id: Number(tableId),
                 items: items.map((item) => ({
-                    food_id: item.food.id,
+                    food_id: Number(item.food.id),
                     quantity: item.quantity,
                 })),
                 special_instructions: specialInstructions || undefined,
             };
 
-            const response = await api.post('/orders/', orderRequest);
-            const orderId = response.data.id;
+            const response = await ordersApi.create(orderRequest);
+            const orderId = response.id;
 
             clearCart();
             setIsCartOpen(false);
             router.push(`/order/${orderId}`);
         } catch (err: any) {
-            setError(err.message || 'Không thể đặt món. Vui lòng thử lại.');
+            const errorMessage = err.message || '';
+
+            // Check if it's a stock-related error
+            if (errorMessage.includes('sold out') ||
+                errorMessage.includes('insufficient stock') ||
+                errorMessage.includes('hết') ||
+                errorMessage.includes('không đủ')) {
+
+                // Extract food name from error message if available
+                const foodMatch = errorMessage.match(/Food '([^']+)'/);
+                const foodName = foodMatch ? foodMatch[1] : null;
+
+                // Close cart drawer to prevent overlap with out-of-stock popup
+                setIsCartOpen(false);
+                setOutOfStockFood(foodName);
+                setIsOutOfStockPopupOpen(true);
+            } else {
+                setError(errorMessage || 'Không thể đặt món. Vui lòng thử lại.');
+            }
         } finally {
             setIsOrdering(false);
         }
@@ -239,6 +271,16 @@ export default function MenuPage() {
                     <CountBadge count={itemCount} />
                 </motion.button>
             )}
+
+            {/* Out of Stock Popup */}
+            <OutOfStockPopup
+                isOpen={isOutOfStockPopupOpen}
+                onClose={() => {
+                    setIsOutOfStockPopupOpen(false);
+                    setOutOfStockFood(null);
+                }}
+                foodName={outOfStockFood || undefined}
+            />
 
             {/* Cart Drawer */}
             <CartDrawer

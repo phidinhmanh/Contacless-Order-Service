@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, Clock, ChefHat, Bell, Package } from 'lucide-react';
+import { Check, Clock, ChefHat, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OrderStatus } from '@/lib/types';
 

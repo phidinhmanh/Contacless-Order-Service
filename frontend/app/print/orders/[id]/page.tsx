@@ -18,7 +18,8 @@ export default function OrderReceiptPage() {
             try {
                 const response = await api.get<Order>(`/orders/${orderId}`);
                 setOrder(response.data);
-            } catch (err) {
+            } catch (err: any) {
+                console.error(err.messages)
                 setError('Không thể tải đơn hàng');
             }
         };

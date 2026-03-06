@@ -7,7 +7,7 @@ import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { OrderStatusStepper } from '@/components/OrderStatusStepper';
 import { Button } from '@/components/ui/Button';
 import { LoadingState } from '@/components/ui/Spinner';
-import api from '@/lib/api';
+import { ordersApi } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 import type { Order } from '@/lib/types';
 import { useCartStore } from '@/store/cartStore';
@@ -30,10 +30,11 @@ export default function OrderTrackingPage() {
         if (showRefreshing) setIsRefreshing(true);
 
         try {
-            const response = await api.get<Order>(`/orders/${orderId}`);
-            setOrder(response.data);
+            const orderData = await ordersApi.getById(Number(orderId));
+            setOrder(orderData);
             setError('');
         } catch (err: any) {
+            console.error(err.messages)
             setError('Không thể tải thông tin đơn hàng.');
         } finally {
             setIsLoading(false);

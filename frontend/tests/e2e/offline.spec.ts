@@ -3,7 +3,18 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Offline Behavior', () => {
     test('Shows error when creating order offline', async ({ page, context }) => {
-        await page.goto('/table/1');
+        // Navigate and get to menu page
+        await page.goto('/?table_id=1');
+        await page.getByRole('button', { name: /Bắt đầu đặt món/i }).click();
+
+        // Close demographic modal
+        const closeButton = page.locator('button').filter({ has: page.locator('svg') }).first();
+        await closeButton.waitFor({ state: 'visible', timeout: 5000 });
+        await closeButton.click();
+
+        // Wait for menu to load
+        await page.waitForURL(/.*\/menu/);
+        await page.waitForSelector('.food-card', { state: 'visible', timeout: 10000 });
 
         // Add to cart
         await page.locator('[data-testid^="add-to-cart-"]').first().click();
@@ -21,7 +32,19 @@ test.describe('Offline Behavior', () => {
     });
 
     test('Cart persists when offline', async ({ page, context }) => {
-        await page.goto('/table/1');
+        // Navigate and get to menu page
+        await page.goto('/?table_id=1');
+        await page.getByRole('button', { name: /Bắt đầu đặt món/i }).click();
+
+        // Close demographic modal
+        const closeButton = page.locator('button').filter({ has: page.locator('svg') }).first();
+        await closeButton.waitFor({ state: 'visible', timeout: 5000 });
+        await closeButton.click();
+
+        // Wait for menu to load
+        await page.waitForURL(/.*\/menu/);
+        await page.waitForSelector('.food-card', { state: 'visible', timeout: 10000 });
+
         await page.locator('[data-testid^="add-to-cart-"]').first().click();
 
         // Go offline

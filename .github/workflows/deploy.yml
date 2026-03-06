@@ -11,38 +11,38 @@ jobs:
     name: Deploy Application
     runs-on: ubuntu-latest
     environment: production
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.13"
-    
+
     - name: Install UV
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
-    
+
     - name: Install dependencies
       run: |
         uv sync --frozen
-    
+
     - name: Run tests
       run: |
         uv run pytest tests/ -v -W error::DeprecationWarning
-    
+
     - name: Build Docker image
       run: |
         docker build -t contactless-order-service:${{ github.ref_name }} .
-    
+
     - name: Deploy notification
       run: |
         echo "🚀 Deploying version ${{ github.ref_name }}"
         echo "Add your deployment commands here (e.g., push to registry, deploy to cloud)"
-    
+
     # Example: Deploy to cloud provider
     # - name: Deploy to Cloud Run / EC2 / Heroku
     #   run: |

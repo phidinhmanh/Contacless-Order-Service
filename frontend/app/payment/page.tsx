@@ -7,7 +7,7 @@ import { ArrowLeft, CreditCard, X, CheckCircle, Loader2 } from 'lucide-react';
 import { PaymentButton } from '@/components/PaymentButton';
 import { CountdownProgress } from '@/components/CountdownTimer';
 import { LoadingState } from '@/components/ui/Spinner';
-import api from '@/lib/api';
+import { ordersApi, paymentsApi } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 import type { Order, PaymentProvider, VietQRPayment } from '@/lib/types';
 
@@ -38,8 +38,8 @@ function PaymentSelectionContent() {
 
         const fetchOrder = async () => {
             try {
-                const response = await api.get<Order>(`/orders/${orderId}`);
-                setOrder(response.data);
+                const orderData = await ordersApi.getById(Number(orderId));
+                setOrder(orderData);
             } catch (err: any) {
                 setError('Không thể tải thông tin đơn hàng.');
             } finally {
@@ -56,8 +56,8 @@ function PaymentSelectionContent() {
 
         const pollPaymentStatus = async () => {
             try {
-                const response = await api.get(`/payments/${vietqrPayment.id}`);
-                if (response.data.status === 'completed') {
+                const paymentStatus = await paymentsApi.getStatus(vietqrPayment.id);
+                if (paymentStatus.status === 'completed') {
                     setPaymentConfirmed(true);
                     setTimeout(() => {
                         router.push(`/payment/status/${vietqrPayment.id}?order_id=${orderId}&status=success`);
@@ -83,17 +83,17 @@ function PaymentSelectionContent() {
         try {
             if (provider === 'cash') {
                 // [FIX] Gọi API báo thanh toán tiền mặt để Kitchen nhận đơn ngay
-                await api.post(`/orders/${orderId}/pay-cash`);
+                await ordersApi.payCash(Number(orderId));
                 router.push(`/payment/status?order_id=${orderId}&provider=cash&status=success`);
                 return;
             }
 
-            const response = await api.post('/payments/initiate', {
-                order_id: parseInt(orderId),
-                provider: provider,
+            const paymentData = await paymentsApi.initiate({
+                order_id: Number(orderId),
+                payment_method: provider,
                 amount: order.total_amount,
             });
-            setVietqrPayment(response.data);
+            setVietqrPayment(paymentData);
             setShowQRModal(true);
             setIsProcessing(false);
         } catch (err: any) {
@@ -167,7 +167,7 @@ function PaymentSelectionContent() {
             <AnimatePresence>
                 {showQRModal && vietqrPayment && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-dark-card border border-dark-border rounded-3xl w-full max-w-sm overflow-hidden">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-dark-card border border-dark-border rounded-3xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
                             <div className="flex items-center justify-between p-4 border-b border-dark-border">
                                 <h3 className="text-lg font-bold text-text-primary">Quét mã QR để thanh toán</h3>
                                 <button onClick={handleCloseModal} className="w-8 h-8 rounded-full bg-dark-bg flex items-center justify-center text-text-muted hover:text-text-primary"><X size={18} /></button>
@@ -183,7 +183,7 @@ function PaymentSelectionContent() {
                                 ) : (
                                     <>
                                         <div className="bg-white rounded-2xl p-4 flex items-center justify-center">
-                                            <img src={vietqrPayment.qr_url} alt="VietQR" className="w-full max-w-[256px] h-auto" />
+                                            <img src={vietqrPayment.qr_url} alt="VietQR Payment Code" className="w-full max-w-[240px] h-auto object-contain" />
                                         </div>
                                         <div className="text-center">
                                             <p className="text-text-muted text-sm">Số tiền</p>

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import { usersApi, authApi } from '@/lib/api';
 
 interface AdminUser {
     id: number;
@@ -39,7 +39,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    // Check for existing session on mount
+    // Check for existing session on mountp
     useEffect(() => {
         const token = localStorage.getItem(ADMIN_TOKEN_KEY);
         const savedUser = localStorage.getItem(ADMIN_USER_KEY);
@@ -67,20 +67,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
 
         try {
-            // Login via OAuth2 form
-            const formData = new URLSearchParams();
-            formData.append('username', phone);
-            formData.append('password', password);
-
-            const response = await api.post('/auth/login', formData, {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            });
-
-            const { access_token } = response.data;
+            const authResponse = await authApi.phoneLogin(phone, password);
+            const { access_token } = authResponse;
 
             // Fetch user profile to check role
-            const userResponse = await api.get('/users/me');
-            const userData = userResponse.data;
+            const userData = await usersApi.getMe();
 
             if (!['manager', 'admin'].includes(userData.role)) {
                 throw new Error('Bạn không có quyền truy cập trang quản lý');

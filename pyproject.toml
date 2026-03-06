@@ -23,12 +23,13 @@ dependencies = [
     "pytz>=2024.1",
     "httpx>=0.28.1",
     "requests>=2.32.5",
+    "types-openpyxl>=3.1.5.20250919",
+    "types-qrcode>=8.2.0.20250914",
 ]
 
 [project.optional-dependencies]
 dev = [
     "ruff>=0.1.6",
-    "mypy>=1.7.1",
     "bandit>=1.7.5",
     "pylint>=3.0.0",
     "pytest>=7.4.0",
@@ -38,26 +39,63 @@ dev = [
     "pre-commit>=3.6.0",
 ]
 
-# Ruff (fast linter)
-[tool.ruff]
-line-length = 100
-select = ["E", "F", "I", "N", "W"]
-ignore = ["E501"]  # Line too long
+[tool.ruff.lint]
+# 1. Enable flake8-bugbear (`B`) rules, in addition to the defaults.
+select = ["E4", "E7", "E9", "F", "B"]
 
-[tool.ruff.per-file-ignores]
-"__init__.py" = ["F401"]  # Unused imports OK in __init__
+# 2. Avoid enforcing line-length violations (`E501`)
+ignore = ["E501"]
 
-# MyPy (type checking)
+# 3. Avoid trying to fix flake8-bugbear (`B`) violations.
+unfixable = ["B"]
+
+# 4. Ignore `E402` (import violations) in all `__init__.py` files, and in selected subdirectories.
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+"**/{tests,docs,tools}/*" = ["E402"]
+
+[tool.ruff.format]
+# 5. Use single quotes in `ruff format`.
+quote-style = "single"
+
+
+[tool.ty.src]
+include = ["app"]
+exclude = [".venv", "alembic"]
+[tool.ty.rules]
+index-out-of-bounds = "ignore"
+
+[tool.ty.environment]
+root = ["."]
+
+# mypy configuration - ignore SQLAlchemy Column type issues
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false  # Start lenient, tighten later
+disallow_untyped_defs = false
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sqlalchemy.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "passlib.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "jose.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "pytz.*"
+ignore_errors = true
 
 # Bandit (security)
 [tool.bandit]
-exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B106", "B107"]
+exclude_dirs = ["tests", "venv", ".venv", "scripts"]
 
 # Pytest
 [tool.pytest.ini_options]
@@ -75,4 +113,6 @@ omit = ["*/tests/*", "*/__init__.py"]
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
 ]

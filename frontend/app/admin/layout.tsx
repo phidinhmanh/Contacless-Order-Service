@@ -16,7 +16,6 @@ import {
     Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import api from '@/lib/api';
 import { useAdminAudio } from '@/hooks/useAdminAudio';
 
 const navItems = [

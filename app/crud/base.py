@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.models.base import Base
 
-ModelType = TypeVar("ModelType", bound=Base)
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+ModelType = TypeVar('ModelType', bound=Base)
+CreateSchemaType = TypeVar('CreateSchemaType', bound=BaseModel)
+UpdateSchemaType = TypeVar('UpdateSchemaType', bound=BaseModel)
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -51,7 +51,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     def delete(self, db: Session, *, id: int) -> ModelType | None:
         """Delete a record by ID."""
-        obj = db.query(self.model).get(id)
+        obj = db.get(self.model, id)
         if obj:
             db.delete(obj)
             db.commit()

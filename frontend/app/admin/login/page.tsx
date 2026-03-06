@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UtensilsCrossed, Phone, Lock, AlertCircle, Loader2 } from 'lucide-react';
-import api from '@/lib/api';
+import { usersApi, authApi } from '@/lib/api';
 
 const ADMIN_TOKEN_KEY = 'admin_access_token';
 const ADMIN_USER_KEY = 'admin_user';
@@ -20,29 +20,15 @@ export default function AdminLoginPage() {
         setIsLoading(true);
 
         try {
-            // Use URLSearchParams for application/x-www-form-urlencoded (standard for OAuth2)
-            const params = new URLSearchParams();
-            params.append('username', phone);
-            params.append('password', password);
-
-            // 1. Get the token - Explicitly set Content-Type
-            const response = await api.post('/auth/login', params, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-
-            const { access_token } = response.data;
+            // 1. Get the token
+            const authResponse = await authApi.phoneLogin(phone, password);
+            const { access_token } = authResponse;
 
             // 2. Save token
             localStorage.setItem(ADMIN_TOKEN_KEY, access_token);
 
             // 3. Fetch user profile
-            const userResponse = await api.get('/users/me', {
-                headers: { Authorization: `Bearer ${access_token}` }
-            });
-
-            const userData = userResponse.data;
+            const userData = await usersApi.getMe();
 
             if (!['manager', 'admin'].includes(userData.role)) {
                 // Clean up if they aren't authorized
@@ -57,7 +43,7 @@ export default function AdminLoginPage() {
 
             router.push('/admin');
         } catch (err: any) {
-            // ... error handling
+            console.error(err.message)
         } finally {
             setIsLoading(false);
         }

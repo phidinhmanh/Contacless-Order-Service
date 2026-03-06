@@ -8,6 +8,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     const wsRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
+
         const connect = () => {
             // Get tokens from localStorage
             const adminToken = localStorage.getItem('admin_access_token');

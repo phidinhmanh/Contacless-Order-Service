@@ -1,36 +1,48 @@
 /** @jest-environment node */
 import WebSocket from 'ws';
-import axios from 'axios';
+import {
+    createTestApiClient,
+    setAdminToken,
+    clearTestToken,
+    getTestApiUrl,
+} from '../testUtils';
 
 describe('WebSocket Kitchen Notifications Integration', () => {
-    const MAIN_URL = process.env.TEST_API_URL || 'http://localhost:8000';
-    // Fix: Router prefix for kitchen is usually included in api_router without prefix or with prefix from endpoints
+    const MAIN_URL = getTestApiUrl();
+    // Fix: WebSocket endpoint is defined at /ws/kitchen (without /api/v1 prefix)
+    // app/api/v1/endpoints/kitchen.py: @router.websocket("/ws/kitchen")
     // app/api/v1/router.py: api_router.include_router(kitchen.router, tags=["kitchen"])
     // app/main.py: app.include_router(api_router, prefix="/api/v1")
     // So the path is /api/v1/ws/kitchen
     const ACTUAL_WS_URL = `${MAIN_URL.replace('http', 'ws')}/api/v1/ws/kitchen`;
 
     let adminToken: string;
+    const api = createTestApiClient();
 
     beforeAll(async () => {
-        // 1. Login to get a real token (FastAPI OAuth2 expects form-data)
+        // Login to get a real token
         try {
             const params = new URLSearchParams();
             params.append('username', '0971462804');
             params.append('password', 'Manh0110');
 
-            const loginRes = await axios.post(`${MAIN_URL}/api/v1/auth/login`, params, {
+            const loginRes = await api.post('/auth/login', params, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
             adminToken = loginRes.data.access_token;
+            setAdminToken(adminToken);
         } catch (error: any) {
             console.warn("Real login failed. Ensure backend is running and user exists:", error.message || error);
             adminToken = "test-token";
         }
     });
 
+    afterAll(() => {
+        clearTestToken();
+    });
+
     test('Kitchen receives order within 2 seconds', async () => {
-        // 2. Connect kitchen client with token
+        // Connect kitchen client with token
         const ws = new WebSocket(`${ACTUAL_WS_URL}?token=${adminToken}`, {
             headers: {
                 origin: MAIN_URL
@@ -74,18 +86,18 @@ describe('WebSocket Kitchen Notifications Integration', () => {
 
         const startTime = Date.now();
 
-        // 3. Customer creates order (via API)
+        // Customer creates order (via API)
         const orderPayload = {
             table_id: 1,
             items: [{ food_id: 1, quantity: 1 }]
         };
 
         try {
-            const response = await axios.post(`${MAIN_URL}/api/v1/orders/`, orderPayload, {
-                headers: { 'Authorization': `Bearer ${adminToken}` }
-            });
+            clearTestToken();
+            setAdminToken(adminToken);
+            const response = await api.post('/orders/', orderPayload);
 
-            // 4. Wait for WebSocket message
+            // Wait for WebSocket message
             const wsMessage: any = await messagePromise;
             const duration = Date.now() - startTime;
 

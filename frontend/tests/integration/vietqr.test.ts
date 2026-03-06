@@ -7,13 +7,13 @@ describe('VietQR Integration', () => {
         /*
         const orderRes = await fetch(`${API_URL}/orders`, { ...createOrderPayload... });
         const order = await orderRes.json();
-        
+
         const paymentRes = await fetch(`${API_URL}/payments/initiate`, {
             method: 'POST',
             body: JSON.stringify({ order_id: order.id, provider: 'vietqr', amount: order.total })
         });
         const payment = await paymentRes.json();
-        
+
         expect(payment.qr_url).toContain('https://img.vietqr.io');
         expect(payment.amount).toBe(order.total);
         */
@@ -41,9 +41,9 @@ describe('VietQR Integration', () => {
             headers: { 'secure-token': 'CASSO_SECRET' },
             body: JSON.stringify(webhookPayload)
         });
-        
+
         expect(res.status).toBe(200);
-        
+
         // Verify order status updated
         */
     });

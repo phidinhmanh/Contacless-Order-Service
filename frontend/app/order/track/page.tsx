@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn, formatPrice } from '@/lib/utils';
-import api from '@/lib/api';
 import { useCartStore } from '@/store/cartStore';
 import type { Order } from '@/lib/types';
+import { ordersApi } from '@/lib/api';
 
 // Local interfaces removed in favor of global types
 
@@ -37,20 +37,14 @@ export default function TrackOrderPage() {
     const fetchOrders = async () => {
         try {
             setIsLoading(true);
-            // Fetch orders for this table
-            const endpoint = tableId
-                ? `/orders/?table_id=${tableId}&limit=10`
-                : '/orders/?limit=10';
-            const response = await api.get(endpoint);
-
-            // Filter to show only active orders (not cancelled or completed more than 1 hour ago)
-            const activeOrders = response.data.filter((order: Order) => {
+            // Fetch all orders for this table (including completed)
+            const response = await ordersApi.list({
+                table_id: Number(tableId),
+                status: ['pending', 'confirmed', 'preparing', 'ready']
+            });
+            // Filter to show only active orders (not cancelled)
+            const activeOrders = response.filter((order: Order) => {
                 if (order.status === 'cancelled') return false;
-                if (order.status === 'completed') {
-                    const completedTime = new Date(order.created_at).getTime();
-                    const hourAgo = Date.now() - 3600000;
-                    return completedTime > hourAgo;
-                }
                 return true;
             });
 

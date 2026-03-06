@@ -19,7 +19,7 @@ import {
     Printer
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
-import api from '@/lib/api';
+import { ordersApi, analyticsApi } from '@/lib/api';
 
 interface OrderItem {
     id: number;
@@ -99,18 +99,18 @@ export default function OrdersPage() {
     const [mobileStatus, setMobileStatus] = useState<OrderStatus>('pending');
     const [searchQuery, setSearchQuery] = useState('');
     const [historyFilter, setHistoryFilter] = useState<OrderStatus | 'all'>('all');
+    const [markingPaidId, setMarkingPaidId] = useState<number | null>(null);
 
     const fetchData = useCallback(async () => {
         try {
-            const [ordersRes, revenueRes] = await Promise.all([
-                api.get('/orders/?limit=500'),
-                api.get('/analytics/revenue')
+            const [allOrders, revenueData] = await Promise.all([
+                ordersApi.list({ limit: 500 }),
+                analyticsApi.revenue()
             ]);
 
-            const allOrders = ordersRes.data as Order[];
-            setTodayRevenue(revenueRes.data.total_revenue || 0);
+            setTodayRevenue(revenueData.total_revenue || 0);
 
-            const pendingCount = allOrders.filter(o => o.status === 'pending').length;
+            const pendingCount = allOrders.filter((o: Order) => o.status === 'pending').length;
             // Play sound if orders increased (and not first load)
             if (pendingCount > lastOrderCount && soundEnabled && lastOrderCount !== -1) {
                 const audio = new Audio('/sounds/notification.mp3');
@@ -144,7 +144,7 @@ export default function OrdersPage() {
 
     const handleStatusChange = async (orderId: number, newStatus: string) => {
         try {
-            await api.put(`/orders/${orderId}`, { status: newStatus });
+            await ordersApi.updateStatus(orderId, newStatus);
             console.log(`📦 Order #${orderId} status changed to: ${newStatus}`);
             setOrders(prev => prev.map(o =>
                 o.id === orderId ? { ...o, status: newStatus } : o
@@ -152,6 +152,22 @@ export default function OrdersPage() {
         } catch (error) {
             console.error('Failed to update order:', error);
             fetchData();
+        }
+    };
+
+    const handleMarkPaid = async (orderId: number) => {
+        if (!confirm('Xác nhận khách đã thanh toán và chuyển đơn sang xác nhận?')) return;
+        setMarkingPaidId(orderId);
+        try {
+            await ordersApi.updateStatus(orderId, 'confirmed', { payment_status: 'paid' });
+            setOrders(prev => prev.map(o =>
+                o.id === orderId ? { ...o, status: 'confirmed' } : o
+            ));
+        } catch (error) {
+            console.error('Failed to mark order as paid:', error);
+            fetchData();
+        } finally {
+            setMarkingPaidId(null);
         }
     };
 
@@ -343,9 +359,11 @@ export default function OrdersPage() {
                                     key={order.id}
                                     order={order}
                                     onStatusChange={handleStatusChange}
+                                    onMarkPaid={handleMarkPaid}
                                     onCancel={handleCancel}
                                     getTimeAgo={getTimeAgo}
                                     formatTime={formatTime}
+                                    isMarkingPaid={markingPaidId === order.id}
                                 />
                             ))
                         )}
@@ -383,9 +401,11 @@ export default function OrdersPage() {
                                                     key={order.id}
                                                     order={order}
                                                     onStatusChange={handleStatusChange}
+                                                    onMarkPaid={handleMarkPaid}
                                                     onCancel={handleCancel}
                                                     getTimeAgo={getTimeAgo}
                                                     formatTime={formatTime}
+                                                    isMarkingPaid={markingPaidId === order.id}
                                                 />
                                             ))
                                         )}
@@ -516,19 +536,24 @@ function EmptyState({ status }: { status: OrderStatus }) {
 function OrderCard({
     order,
     onStatusChange,
+    onMarkPaid,
     onCancel,
     getTimeAgo,
-    formatTime
+    formatTime,
+    isMarkingPaid = false
 }: {
     order: Order;
     onStatusChange: (id: number, status: string) => void;
+    onMarkPaid: (id: number) => void;
     onCancel: (id: number) => void;
     getTimeAgo: (date: string) => string;
     formatTime: (date: string) => string;
+    isMarkingPaid?: boolean;
 }) {
     const nextStatus = getNextStatus(order.status);
     const nextLabel = getNextStatusLabel(order.status);
     const isPaid = order.status === 'paid';
+    const canMarkPaid = order.status === 'pending';
     const urgency = getTimeUrgency(order.created_at);
 
     return (
@@ -604,37 +629,58 @@ function OrderCard({
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2">
-                {nextStatus && nextLabel && (
-                    <button
-                        onClick={() => onStatusChange(order.id, nextStatus)}
-                        className="flex-1 py-2.5 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 active:scale-[0.98] transition-all text-sm"
-                    >
-                        {nextLabel}
-                    </button>
-                )}
-                {(order.status === 'pending' || order.status === 'paid') && (
-                    <button
-                        onClick={() => onCancel(order.id)}
-                        className="px-4 py-2.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 active:scale-[0.98] transition-all text-sm font-medium"
-                    >
-                        Hủy
-                    </button>
-                )}
+            <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                    {nextStatus && nextLabel && (
+                        <button
+                            onClick={() => onStatusChange(order.id, nextStatus)}
+                            className="flex-1 py-2.5 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 active:scale-[0.98] transition-all text-sm"
+                        >
+                            {nextLabel}
+                        </button>
+                    )}
+                    {canMarkPaid && (
+                        <button
+                            onClick={() => onMarkPaid(order.id)}
+                            disabled={isMarkingPaid}
+                            className="flex-1 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 active:scale-[0.98] transition-all text-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-0"
+                        >
+                            {isMarkingPaid ? (
+                                <>
+                                    <RefreshCw size={16} className="animate-spin shrink-0" />
+                                    <span className="truncate">Đang xử lý...</span>
+                                </>
+                            ) : (
+                                'Xác nhận TT'
+                            )}
+                        </button>
+                    )}
+                </div>
 
-                <button
-                    onClick={() => {
-                        window.open(
-                            `/print/orders/${order.id}`,
-                            'Receipt',
-                            'width=400,height=600,toolbar=0,scrollbars=1,status=1'
-                        );
-                    }}
-                    className="p-2.5 bg-dark-border text-text-secondary rounded-lg hover:bg-dark-border/80 active:scale-[0.98] transition-all"
-                    title="In hóa đơn"
-                >
-                    <Printer size={18} />
-                </button>
+                <div className="flex gap-2">
+                    {(order.status === 'pending' || order.status === 'paid') && (
+                        <button
+                            onClick={() => onCancel(order.id)}
+                            className="flex-1 px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 active:scale-[0.98] transition-all text-sm font-medium"
+                        >
+                            Hủy
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => {
+                            window.open(
+                                `/admin/orders/${order.id}/print`,
+                                'Receipt',
+                                'width=400,height=600,toolbar=0,scrollbars=1,status=1'
+                            );
+                        }}
+                        className="px-4 py-2 bg-dark-border text-text-secondary rounded-lg hover:bg-dark-border/80 active:scale-[0.98] transition-all"
+                        title="In hóa đơn"
+                    >
+                        <Printer size={18} />
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.orm import relationship
@@ -9,15 +9,16 @@ from app.models.base import Base
 
 class UserRole(str, enum.Enum):
     """User roles for access control."""
-    CUSTOMER = "customer"
-    STAFF = "staff"
-    KITCHEN = "kitchen"
-    MANAGER = "manager"
-    ADMIN = "admin"
+
+    CUSTOMER = 'customer'
+    STAFF = 'staff'
+    KITCHEN = 'kitchen'
+    MANAGER = 'manager'
+    ADMIN = 'admin'
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
     phone_number = Column(String(20), unique=True, index=True, nullable=True)
@@ -38,4 +39,4 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
 
     # Relationships
-    orders = relationship("Order", back_populates="user")
+    orders = relationship('Order', back_populates='user')

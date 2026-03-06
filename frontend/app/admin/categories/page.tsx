@@ -10,11 +10,9 @@ import {
     Check,
     X,
     Loader2,
-    MoveUp,
-    MoveDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import api from '@/lib/api';
+import { categoriesApi } from '@/lib/api';
 
 interface Category {
     id: number;
@@ -60,8 +58,8 @@ export default function CategoryManagementPage() {
     const fetchCategories = async () => {
         setIsLoading(true);
         try {
-            const response = await api.get('/categories?include_inactive=true');
-            setCategories(response.data);
+            const categories = await categoriesApi.list({ include_inactive: true });
+            setCategories(categories);
         } catch (err: any) {
             setError(err.message || 'Không thể tải danh sách danh mục');
         } finally {
@@ -96,9 +94,9 @@ export default function CategoryManagementPage() {
 
         try {
             if (editingCategory) {
-                await api.put(`/categories/${editingCategory.id}`, formData);
+                await categoriesApi.update(editingCategory.id, formData);
             } else {
-                await api.post('/categories', formData);
+                await categoriesApi.create(formData);
             }
             setShowModal(false);
             fetchCategories();
@@ -111,7 +109,7 @@ export default function CategoryManagementPage() {
 
     const handleDelete = async (id: number) => {
         try {
-            await api.delete(`/categories/${id}`);
+            await categoriesApi.delete(id);
             setDeletingId(null);
             fetchCategories();
         } catch (err: any) {
@@ -121,7 +119,7 @@ export default function CategoryManagementPage() {
 
     const toggleStatus = async (category: Category) => {
         try {
-            await api.put(`/categories/${category.id}`, { is_active: !category.is_active });
+            await categoriesApi.toggleActive(category.id, !category.is_active);
             fetchCategories();
         } catch (err: any) {
             setError(err.message || 'Lỗi khi cập nhật trạng thái');

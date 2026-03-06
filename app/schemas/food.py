@@ -1,10 +1,11 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FoodBase(BaseModel):
     """Base food schema with common fields."""
+
     name: str
     price: float
     category_id: int | None = None  # FK to Category table
@@ -13,11 +14,13 @@ class FoodBase(BaseModel):
 
 class FoodCreate(FoodBase):
     """Schema for creating a new food item."""
+
     pass
 
 
 class FoodUpdate(BaseModel):
     """Schema for updating a food item. All fields optional."""
+
     name: str | None = None
     price: float | None = None
     category_id: int | None = None
@@ -30,6 +33,7 @@ class FoodUpdate(BaseModel):
 
 class FoodStockUpdate(BaseModel):
     """Schema for quick mid-shift stock updates."""
+
     stock_quantity: int = Field(..., ge=0)
     is_available: bool | None = None
     is_out_of_stock: bool | None = None
@@ -37,6 +41,7 @@ class FoodStockUpdate(BaseModel):
 
 class FoodResponse(FoodBase):
     """Schema for food response."""
+
     id: int
     is_available: bool
     is_out_of_stock: bool = Field(default=False)
@@ -44,6 +49,5 @@ class FoodResponse(FoodBase):
     image_url: str | None = None
     created_at: datetime | None = None
     deleted_at: datetime | None = None
-
 
     model_config = ConfigDict(from_attributes=True)

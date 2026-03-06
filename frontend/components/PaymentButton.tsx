@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/Spinner';
 import type { PaymentProvider } from '@/lib/types';

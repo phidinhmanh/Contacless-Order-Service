@@ -1,0 +1,133 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - heading "Thực đơn" [level=1] [ref=e7]
+            - generic [ref=e8]: Bàn 1
+            - button "Theo dõi đơn" [ref=e9] [cursor=pointer]:
+              - img [ref=e10]
+              - text: Theo dõi đơn
+          - generic [ref=e15]:
+            - img [ref=e17]
+            - textbox "Tìm món ăn..." [ref=e20]
+        - generic [ref=e22]:
+          - button "Tất cả" [ref=e23] [cursor=pointer]
+          - button "Appetizer" [ref=e24] [cursor=pointer]
+          - button "Dessert" [ref=e25] [cursor=pointer]
+          - button "Drinks" [ref=e26] [cursor=pointer]
+          - button "Main" [ref=e27] [cursor=pointer]
+          - button "Sandwich" [ref=e28] [cursor=pointer]
+          - button "Seafood" [ref=e29] [cursor=pointer]
+          - button "Soup" [ref=e30] [cursor=pointer]
+      - main [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - img "Phở Bò" [ref=e36]
+              - generic [ref=e37]: x1
+            - generic [ref=e38]:
+              - heading "Phở Bò" [level=3] [ref=e39]
+              - paragraph [ref=e40]: Traditional Vietnamese beef noodle soup with rice noodles, tender beef slices, and aromatic broth.
+              - generic [ref=e41]:
+                - generic [ref=e42]: 55.000 ₫
+                - generic [ref=e43]:
+                  - button "Giảm số lượng" [ref=e44] [cursor=pointer]:
+                    - img [ref=e45]
+                  - generic [ref=e46]: "1"
+                  - button "Tăng số lượng" [ref=e47] [cursor=pointer]:
+                    - img [ref=e48]
+          - generic [ref=e50]:
+            - img "Bánh Mì" [ref=e52]
+            - generic [ref=e53]:
+              - heading "Bánh Mì" [level=3] [ref=e54]
+              - paragraph [ref=e55]: Crispy baguette with pate, pickled vegetables, cilantro, and grilled pork.
+              - generic [ref=e56]:
+                - generic [ref=e57]: 25.000 ₫
+                - button "Thêm vào giỏ" [ref=e58] [cursor=pointer]:
+                  - img [ref=e59]
+          - generic [ref=e61]:
+            - img "Bún Chả" [ref=e63]
+            - generic [ref=e64]:
+              - heading "Bún Chả" [level=3] [ref=e65]
+              - paragraph [ref=e66]: Hanoi-style grilled pork with vermicelli noodles, fresh herbs, and dipping sauce.
+              - generic [ref=e67]:
+                - generic [ref=e68]: 60.000 ₫
+                - button "Thêm vào giỏ" [ref=e69] [cursor=pointer]:
+                  - img [ref=e70]
+          - generic [ref=e72]:
+            - img "Cơm Tấm" [ref=e74]
+            - generic [ref=e75]:
+              - heading "Cơm Tấm" [level=3] [ref=e76]
+              - paragraph [ref=e77]: Broken rice with grilled pork chop, fried egg, and fish sauce.
+              - generic [ref=e78]:
+                - generic [ref=e79]: 50.000 ₫
+                - button "Thêm vào giỏ" [ref=e80] [cursor=pointer]:
+                  - img [ref=e81]
+          - generic [ref=e83]:
+            - img "Gỏi Cuốn" [ref=e85]
+            - generic [ref=e86]:
+              - heading "Gỏi Cuốn" [level=3] [ref=e87]
+              - paragraph [ref=e88]: Fresh spring rolls with shrimp, pork, rice noodles, and peanut dipping sauce.
+              - generic [ref=e89]:
+                - generic [ref=e90]: 35.000 ₫
+                - button "Thêm vào giỏ" [ref=e91] [cursor=pointer]:
+                  - img [ref=e92]
+          - generic [ref=e94]:
+            - img "Cà Phê Sữa Đá" [ref=e96]
+            - generic [ref=e97]:
+              - heading "Cà Phê Sữa Đá" [level=3] [ref=e98]
+              - paragraph [ref=e99]: Vietnamese iced coffee with sweetened condensed milk.
+              - generic [ref=e100]:
+                - generic [ref=e101]: 29.000 ₫
+                - button "Thêm vào giỏ" [ref=e102] [cursor=pointer]:
+                  - img [ref=e103]
+          - generic [ref=e105]:
+            - img "Ốc Hương Xào Bơ Tỏi" [ref=e107]
+            - generic [ref=e108]:
+              - heading "Ốc Hương Xào Bơ Tỏi" [level=3] [ref=e109]
+              - paragraph [ref=e110]: Sweet snails stir-fried with garlic butter and lemongrass.
+              - generic [ref=e111]:
+                - generic [ref=e112]: 120.000 ₫
+                - button "Thêm vào giỏ" [ref=e113] [cursor=pointer]:
+                  - img [ref=e114]
+          - generic [ref=e116]:
+            - img "Nem Nướng" [ref=e118]
+            - generic [ref=e119]:
+              - heading "Nem Nướng" [level=3] [ref=e120]
+              - paragraph [ref=e121]: Grilled pork sausage served with rice paper, herbs, and dipping sauce.
+              - generic [ref=e122]:
+                - generic [ref=e123]: 45.000 ₫
+                - button "Thêm vào giỏ" [ref=e124] [cursor=pointer]:
+                  - img [ref=e125]
+          - generic [ref=e127]:
+            - img "Trà Đá" [ref=e129]
+            - generic [ref=e130]:
+              - heading "Trà Đá" [level=3] [ref=e131]
+              - paragraph [ref=e132]: Iced Vietnamese green tea - free refills!
+              - generic [ref=e133]:
+                - generic [ref=e134]: 5.000 ₫
+                - button "Thêm vào giỏ" [ref=e135] [cursor=pointer]:
+                  - img [ref=e136]
+          - generic [ref=e138]:
+            - img "Chè Ba Màu" [ref=e140]
+            - generic [ref=e141]:
+              - heading "Chè Ba Màu" [level=3] [ref=e142]
+              - paragraph [ref=e143]: Three-color dessert with mung beans, red beans, and jelly in coconut milk.
+              - generic [ref=e144]:
+                - generic [ref=e145]: 25.000 ₫
+                - button "Thêm vào giỏ" [ref=e146] [cursor=pointer]:
+                  - img [ref=e147]
+      - button "1":
+        - img
+        - generic: "1"
+  - button [ref=e148] [cursor=pointer]:
+    - img [ref=e149]
+  - button "Open Next.js Dev Tools" [ref=e156] [cursor=pointer]:
+    - img [ref=e157]
+  - alert [ref=e162]
+```

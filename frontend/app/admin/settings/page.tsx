@@ -2,7 +2,6 @@
 
 import React from 'react';
 import {
-    Settings as SettingsIcon,
     Bell,
     Palette,
     Database,

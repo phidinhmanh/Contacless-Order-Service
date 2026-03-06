@@ -10,7 +10,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -19,13 +18,13 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
+frontend/test_results/
 # Virtual Environment
 .venv/
 venv/
 ENV/
 env/
-
+.agent/
 # IDE
 .vscode/
 .idea/
@@ -59,8 +58,7 @@ error_traceback.txt
 .env.local
 .env.*.local
 
-# UV package manager
-uv.lock
+
 
 # Pytest
 .pytest_cache/

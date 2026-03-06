@@ -1,154 +1,51 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     TrendingUp,
     ShoppingBag,
     Users,
     Clock,
     Star,
-    UserPlus,
     RefreshCw,
     User as UserIcon,
     Calendar,
     BarChart3,
-    ArrowUpRight,
-    ArrowDownRight,
     Download
 } from 'lucide-react';
 import { cn, formatPrice } from '@/lib/utils';
-import api from '@/lib/api';
 
-interface RevenueData {
-    period: { start: string; end: string };
-    total_revenue: number;
-    order_count: number;
-    average_order_value: number;
-    currency: string;
-}
+// Hooks
+import { useDatePeriod } from '@/hooks/useDatePeriod';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
+import { useGenderStats } from '@/hooks/useGenderStats';
+import { useAnalyticsExport } from '@/hooks/useExportReport';
 
-interface ItemStat {
-    food_name: string;
-    quantity: number;
-    revenue: number;
-}
-
-interface PeakHour {
-    time_slot: string;
-    order_count: number;
-}
-
-interface CustomerSegments {
-    total_customers: number;
-    new_customers: number;
-    returning_customers: number;
-    retention_rate: number;
-}
-
-interface RetentionData {
-    rate_14d: number;
-    rate_30d: number;
-    returning_users_14d: number;
-    returning_users_30d: number;
-}
+// Types
+import { PeriodType } from '@/lib/types/analytics';
 
 export default function AnalyticsPage() {
-    const [revenueStats, setRevenueStats] = useState<RevenueData | null>(null);
-    const [customerSegments, setCustomerSegments] = useState<CustomerSegments | null>(null);
-    const [retention, setRetention] = useState<RetentionData | null>(null);
-    const [popularItems, setPopularItems] = useState<ItemStat[]>([]);
-    const [peakHours, setPeakHours] = useState<PeakHour[]>([]);
-    const [customers, setCustomers] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week');
+    const [period, setPeriod] = useState<PeriodType>('week');
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // Use a consistent reference for "Now" in Vietnam
-                const now = new Date();
-                const start = new Date();
+    // Use hooks - each has Single Responsibility
+    const { startDateStr, endDateStr } = useDatePeriod(period);
+    const {
+        revenueStats,
+        popularItems,
+        peakHours,
+        customerSegments,
+        retention,
+        customers,
+        isLoading
+    } = useAnalyticsData(period);
+    const genderData = useGenderStats(customers);
+    const { exportAnalytics, isExporting } = useAnalyticsExport();
 
-                if (period === 'day') {
-                    // Set to 00:00:00 local time
-                    start.setHours(0, 0, 0, 0);
-                } else {
-                    const days = period === 'week' ? 7 : 30;
-                    start.setDate(now.getDate() - days);
-                }
-
-                // Use ISO strings; the backend will convert these to UTC based on ICT logic
-                const startDateStr = start.toISOString();
-                const endDateStr = now.toISOString();
-
-                // Ensure the days parameter matches your backend's expected integer
-                const daysParam = period === 'day' ? 1 : period === 'week' ? 7 : 30;
-
-                const [revenueRes, popularRes, peakRes, segmentsRes, retentionRes, usersRes] = await Promise.all([
-                    api.get(`/analytics/revenue?start_date=${startDateStr}&end_date=${endDateStr}`),
-                    api.get(`/analytics/popular-items?days=${daysParam}&limit=10`),
-                    api.get(`/analytics/peak-hours?days=${daysParam}`),
-                    api.get('/analytics/customers'),
-                    api.get('/analytics/retention'),
-                    // Note: /users endpoint requires ADMIN role - gracefully handle if not authorized
-                    api.get('/users', { params: { limit: 100 } }).catch(() => ({ data: [] }))
-                ]);
-
-                setRevenueStats(revenueRes.data);
-                setPopularItems(popularRes.data);
-                setPeakHours(peakRes.data);
-                setCustomerSegments(segmentsRes.data);
-                setRetention(retentionRes.data);
-                setCustomers(Array.isArray(usersRes.data) ? usersRes.data : []);
-            } catch (error) {
-                console.error('Failed to fetch analytics:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [period]);
+    const peakHour = peakHours.find(p => p.order_count > 0) || peakHours[0];
 
     const handleExport = async () => {
-        try {
-            const response = await api.get('/analytics/export', {
-                responseType: 'blob',
-            });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch (error) {
-            console.error('Failed to export report:', error);
-        }
+        await exportAnalytics(startDateStr, endDateStr);
     };
-
-    // Gender distribution with fixed labels
-    const genderData = React.useMemo(() => {
-        const stats = customers.reduce((acc, c) => {
-            const gender = c.gender || 'unknown';
-            acc[gender] = (acc[gender] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        const total = Object.values(stats).reduce((a: number, b: unknown) => a + (b as number), 0);
-
-        return Object.entries(stats).map(([gender, count]) => ({
-            gender,
-            count: count as number,
-            percent: total > 0 ? ((count as number) / total) * 100 : 0,
-            label: gender === 'male' ? 'Nam' : gender === 'female' ? 'Nữ' : 'Khác',
-            color: gender === 'male' ? '#3b82f6' : gender === 'female' ? '#ec4899' : '#6b7280'
-        }));
-    }, [customers]);
-
-    // Peak hour (first valid one)
-    const peakHour = peakHours.find(p => p.order_count > 0) || peakHours[0];
 
     if (isLoading) {
         return (
@@ -185,10 +82,13 @@ export default function AnalyticsPage() {
                     </div>
                     <button
                         onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2 bg-dark-card border border-dark-border rounded-xl text-text-secondary hover:text-text-primary hover:border-text-muted transition-all"
+                        disabled={isExporting}
+                        className="flex items-center gap-2 px-4 py-2 bg-dark-card border border-dark-border rounded-xl text-text-secondary hover:text-text-primary hover:border-text-muted transition-all disabled:opacity-50"
                     >
                         <Download size={18} />
-                        <span className="hidden sm:inline">Xuất báo cáo</span>
+                        <span className="hidden sm:inline">
+                            {isExporting ? 'Đang xuất...' : 'Xuất báo cáo'}
+                        </span>
                     </button>
                     <button className="p-2 bg-dark-card border border-dark-border rounded-xl text-text-muted hover:text-text-primary transition-colors" title="Chọn ngày">
                         <Calendar size={20} />
@@ -256,8 +156,18 @@ export default function AnalyticsPage() {
                             <EmptyState message="Chưa có dữ liệu retention" />
                         ) : (
                             <div className="space-y-4">
-                                <RetentionBar label="14 ngày" rate={retention?.rate_14d || 0} users={retention?.returning_users_14d || 0} color="from-purple-500 to-pink-500" />
-                                <RetentionBar label="30 ngày" rate={retention?.rate_30d || 0} users={retention?.returning_users_30d || 0} color="from-blue-500 to-cyan-500" />
+                                <RetentionBar
+                                    label="14 ngày"
+                                    rate={retention?.rate_14d || 0}
+                                    users={retention?.returning_users_14d || 0}
+                                    color="from-purple-500 to-pink-500"
+                                />
+                                <RetentionBar
+                                    label="30 ngày"
+                                    rate={retention?.rate_30d || 0}
+                                    users={retention?.returning_users_30d || 0}
+                                    color="from-blue-500 to-cyan-500"
+                                />
                             </div>
                         )}
                     </div>
@@ -377,6 +287,10 @@ export default function AnalyticsPage() {
         </div>
     );
 }
+
+// ============================================
+// Reusable Components
+// ============================================
 
 // Reusable Metric Card
 function MetricCard({

@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git reset HEAD:*)",
+      "Bash(git commit:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(git push:*)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T db pg_isready -U postgres)",
+      "Bash(docker compose -f docker-compose.prod.yml up -d backend)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head)",
+      "Bash(ls:*)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic revision --autogenerate -m \"initial_schema\")",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T db psql -U postgres -d contacless_order -c \"DROP TABLE IF EXISTS alembic_version CASCADE;\")",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T db psql -U postgres -d contacless_order -c \"\\\\dt\")",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic current)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic stamp base)",
+      "Bash(docker compose -f docker-compose.prod.yml exec -T backend alembic history)",
+      "Bash(docker compose -f docker-compose.prod.yml down backend)",
+      "Bash(docker compose -f docker-compose.prod.yml up -d --build backend)",
+      "Bash(xargs:*)",
+      "Bash(uv run:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(PYTHONIOENCODING=utf-8 uv run python:*)",
+      "Bash(npm run dev)",
+      "Bash(npx playwright test:*)",
+      "Bash(PYTHONPATH=. uv run:*)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONPATH=. uv run:*)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONPATH=. uv:*)",
+      "Bash(export:*)",
+      "Bash(curl:*)",
+      "Bash(jq:*)",
+      "Bash(npm run test:e2e)",
+      "Bash(docker compose -f docker-compose.prod.yml config --services)",
+      "mcp__postgres__list_objects",
+      "mcp__postgres__get_object_details",
+      "mcp__postgres__execute_sql",
+      "Bash(dir tests)"
+    ]
+  }
+}

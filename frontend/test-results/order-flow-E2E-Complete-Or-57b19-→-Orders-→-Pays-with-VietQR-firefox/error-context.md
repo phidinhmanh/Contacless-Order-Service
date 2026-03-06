@@ -1,0 +1,41 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e6]:
+        - button [ref=e7] [cursor=pointer]:
+          - img [ref=e8]
+        - generic [ref=e11]:
+          - heading "Bạn là ai?" [level=2] [ref=e12]
+          - paragraph [ref=e13]: Hãy cho chúng tôi biết giới tính của bạn
+        - generic [ref=e14]:
+          - button "👨 Nam" [ref=e15] [cursor=pointer]:
+            - generic [ref=e16]: 👨
+            - generic [ref=e17]: Nam
+          - button "👩 Nữ" [ref=e18] [cursor=pointer]:
+            - generic [ref=e19]: 👩
+            - generic [ref=e20]: Nữ
+          - button "👤 Khác" [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]: 👤
+            - generic [ref=e23]: Khác
+      - img [ref=e29]
+      - generic [ref=e34]:
+        - heading "Chào mừng!" [level=1] [ref=e35]
+        - paragraph [ref=e36]: Đặt món dễ dàng, không cần chờ đợi
+      - generic [ref=e39]: Bàn số 1
+      - generic [ref=e41]:
+        - button "Đang xử lý..." [disabled] [ref=e42]:
+          - img [ref=e43]
+          - text: Đang xử lý...
+        - button "Đăng nhập với số điện thoại" [ref=e46] [cursor=pointer]:
+          - img [ref=e47]
+          - text: Đăng nhập với số điện thoại
+      - paragraph [ref=e50]: Powered by Contactless Order Service
+  - button [ref=e51] [cursor=pointer]:
+    - img [ref=e52]
+  - button "Open Next.js Dev Tools" [ref=e61] [cursor=pointer]:
+    - img [ref=e62]
+  - alert [ref=e66]
+```
